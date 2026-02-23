@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Logowanie</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner" data-nav>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>Zarabianie u Szefa</div>
+      <span data-qm-plan style="margin-left:10px"></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Start</a>
+      <a href="cennik.html">Plany</a>
+      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-sm btn-primary" href="cennik.html">Wybierz plan</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid-2">
+
+    <div class="hero-card reveal">
+      <span class="badge"><span class="dot"></span> Dostęp do panelu</span>
+      <div class="h1" style="font-size:34px">Logowanie (demo)</div>
+      <div class="p">
+        Na tym etapie robimy wersję demonstracyjną.
+        Zaloguj się emailem (demo) i wejdź do dashboardu.
+      </div>
+
+      <div class="hr"></div>
+
+      <!-- ✅ LOGOWANIE (demo) -->
+      <form data-login-form>
+        <input class="input" type="email" name="email" placeholder="Twój email" required />
+        <div style="height:10px"></div>
+        <button class="btn btn-primary" type="submit">Zaloguj się</button>
+      </form>
+
+      <div class="hr"></div>
+
+      <div class="hero-cta">
+        <button class="btn btn-primary" type="button" onclick="activateProDemo()">Wejdź jako PRO</button>
+        <a class="btn" href="cennik.html">Zobacz plany</a>
+      </div>
+
+      <div class="hr"></div>
+      <div class="note">
+        Docelowo tu będzie: konto, hasło, reset, oraz weryfikacja płatności.
+      </div>
+    </div>
+
+    <div class="panel reveal d2">
+      <h3>Dlaczego demo?</h3>
+      <div class="list">
+        <div class="item reveal d2">
+          <div class="icon">🧱</div>
+          <div><b>Najpierw stabilny front</b><div>UI, flow, CTA, strony, blokady.</div></div>
+        </div>
+        <div class="item reveal d3">
+          <div class="icon">💳</div>
+          <div><b>Potem płatności</b><div>Stripe/Shopify – i dopiero realne role.</div></div>
+        </div>
+        <div class="item reveal d4">
+          <div class="icon">🔐</div>
+          <div><b>Potem backend</b><div>Firebase/Supabase – realne konta i dane.</div></div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <button class="btn btn-danger" type="button" onclick="QM.logout()">Wyloguj / wyczyść dostęp</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">© 2026 Zarabianie u Szefa</div>
+
+<script>
+  // Demo: ustawia PRO + loguje i przerzuca do dashboard
+  function activateProDemo(){
+    localStorage.setItem("qm_user", "demo@pro.local");
+    if (window.QM && typeof window.QM.setPlan === "function") {
+      window.QM.setPlan("PRO");
+    } else {
+      localStorage.setItem("qm_plan", "PRO");
+    }
+    window.location.href = "dashboard.html";
+  }
+</script>
+
+<script src="assets/app.js"></script>
+<script src="assets/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QualitetMarket • Gotowce</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="logo"></span>
+        <span>Zarabianie u Szefa</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="dashboard.html">Panel</a>
+        <a href="blueprints.html" style="color:var(--text); background:rgba(255,255,255,.06);">Gotowce</a>
+        <a href="intelligence.html">Intelligence</a>
+      </div>
+
+      <div class="nav-cta">
+        <button class="btn btn-sm btn-ghost" id="planBtn">Plan: <span id="planLabel">BASIC</span></button>
+        <button class="btn btn-sm btn-danger" id="logoutBtn">Wyloguj</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="section-title">
+      <div>
+        <span class="badge"><span class="dot"></span> Gotowe sklepy • Blueprinty</span>
+        <h2 style="margin:10px 0 6px;">Wybierz gotowca i startuj</h2>
+        <p>Gotowiec = nisza + 20 produktów + ceny z marżą + copy pack + paczka CSV do wdrożenia.</p>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input class="input" id="bpSearch" placeholder="Szukaj gotowca…" style="min-width:260px; max-width:320px;" />
+        <select class="input" id="bpLevel" style="min-width:220px; max-width:260px;">
+          <option value="">Wszystkie poziomy</option>
+          <option value="BASIC">BASIC</option>
+          <option value="PRO">PRO</option>
+          <option value="ELITE">ELITE</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cards" id="blueprintsGrid"></div>
+
+    <div class="hr"></div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Wybrany gotowiec</h3>
+        <div class="note" id="bpInfo">Wybierz gotowca z listy.</div>
+
+        <div class="hr"></div>
+
+        <div class="grid-2">
+          <div class="kpi">
+            <div>
+              <strong id="bpAvgMargin">—</strong>
+              <span>Śr. marża</span>
+            </div>
+            <span class="badge ok" id="bpBadge">—</span>
+          </div>
+          <div class="kpi">
+            <div>
+              <strong id="bpAvgScore">—</strong>
+              <span>Śr. score</span>
+            </div>
+            <span class="badge" id="bpCount">—</span>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="downloadPackBtn">Pobierz paczkę gotowca</button>
+          <button class="btn" id="downloadCsvBtn">Pobierz CSV</button>
+          <button class="btn btn-ghost" id="copyCopyPackBtn">Kopiuj Copy Pack</button>
+        </div>
+
+        <div class="note" style="margin-top:12px;">
+          <b>Paczkę</b> wklejasz do: Allegro / sklep / landing.  
+          Następny krok (ELITE): import do BaseLinker (CSV feed) — dołożymy później.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Produkty w gotowcu</h3>
+        <div class="qm-table-wrap">
+          <table class="qm-table">
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th class="right">Sugerowana</th>
+                <th class="right">Zysk</th>
+                <th class="right">Marża</th>
+                <th class="right">Score</th>
+              </tr>
+            </thead>
+            <tbody id="bpProductsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">© QualitetMarket • Blueprint Engine</div>
+  </div>
+
+  <script src="js/blueprints.js"></script>
+</body>
+</html>

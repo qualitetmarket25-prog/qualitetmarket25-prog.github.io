@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualitetMarket • Intelligence</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <span class="logo"></span>
+      <span>Zarabianie u Szefa</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="dashboard.html">Panel</a>
+      <a href="blueprints.html">Gotowce</a>
+      <a href="intelligence.html" style="color:var(--text);background:rgba(255,255,255,.06);">Intelligence</a>
+    </div>
+
+    <div class="nav-cta">
+      <button class="btn btn-sm btn-ghost" id="planBtn">
+        Plan: <span id="planLabel">BASIC</span>
+      </button>
+      <button class="btn btn-sm btn-danger" id="logoutBtn">Wyloguj</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="section-title">
+    <div>
+      <span class="badge"><span class="dot"></span> QualitetMarket Intelligence</span>
+      <h2 style="margin:10px 0 6px;">Analityka produktów (scoring + ceny)</h2>
+      <p>Każdy produkt możesz zweryfikować klikając „Sprawdź” i porównać cenę rynkową.</p>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input class="input" id="searchInput" placeholder="Szukaj produktu / dostawcy…">
+      <select class="input" id="supplierFilter">
+        <option value="">Wszyscy dostawcy</option>
+      </select>
+      <select class="input" id="statusFilter">
+        <option value="">Wszystkie statusy</option>
+        <option value="ELITE">🔥 ELITE</option>
+        <option value="HIGH">⭐ WYSOKI</option>
+        <option value="MEDIUM">⚖ ŚREDNI</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="kpi">
+      <div>
+        <strong id="kpiTopScore">—</strong>
+        <span>TOP SCORE</span>
+      </div>
+      <span class="badge ok" id="kpiTopBadge">—</span>
+    </div>
+
+    <div class="kpi">
+      <div>
+        <strong id="kpiAvgMargin">—</strong>
+        <span>Średnia marża</span>
+      </div>
+      <span class="badge" id="kpiCount">—</span>
+    </div>
+
+    <div class="kpi">
+      <div>
+        <strong id="kpiEliteCount">—</strong>
+        <span>Produkty ELITE</span>
+      </div>
+      <span class="badge warn" id="kpiRisk">—</span>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:20px;">
+    <h3>🔎 Sprawdź sam w 2 minuty</h3>
+    <div class="note">
+      1) Kliknij produkt z listy <br>
+      2) Kliknij „Sprawdź” <br>
+      3) Porównaj cenę z Allegro / Google <br><br>
+      Cena sugerowana = <b>średnia rynkowa × 0.92</b><br>
+      System odrzuca produkty poniżej <b>30% marży</b>.
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div class="grid-2">
+    <div class="panel">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>Lista produktów</h3>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-sm" id="exportCsvBtn">Pobierz CSV</button>
+          <button class="btn btn-sm btn-primary" id="exportPackBtn">Pobierz PACZKĘ</button>
+        </div>
+      </div>
+
+      <div class="note" style="margin:12px 0;">
+        <b>Score =</b> Marża (40%) + Trend (20%) + Problem (20%) + Impuls (10%) + Konkurencja (10%)
+      </div>
+
+      <div class="qm-table-wrap">
+        <table class="qm-table">
+          <thead>
+            <tr>
+              <th>Produkt</th>
+              <th>Dostawca</th>
+              <th class="right">Hurt</th>
+              <th class="right">Rynek</th>
+              <th class="right">Sugerowana</th>
+              <th class="right">Zysk</th>
+              <th class="right">Marża</th>
+              <th class="right">Score</th>
+              <th>Status</th>
+              <th>Weryfikacja</th>
+            </tr>
+          </thead>
+          <tbody id="productsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Szczegóły produktu</h3>
+      <div class="note">Kliknij produkt po lewej, aby zobaczyć szczegóły.</div>
+
+      <div class="hr"></div>
+
+      <div id="detailContent">
+        <div class="qm-detail-title">—</div>
+
+        <div class="grid-2" style="margin-top:10px;">
+          <div class="kpi">
+            <div>
+              <strong id="dPrice">—</strong>
+              <span>Sugerowana cena</span>
+            </div>
+            <span class="badge ok" id="dStatus">—</span>
+          </div>
+
+          <div class="kpi">
+            <div>
+              <strong id="dProfit">—</strong>
+              <span>Zysk / szt.</span>
+            </div>
+            <span class="badge" id="dMargin">—</span>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="note" id="recommendationBox">—</div>
+
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <a class="btn btn-sm btn-primary" id="openSourceBtn" target="_blank">Źródło / rynek</a>
+          <button class="btn btn-sm" id="copyOfferBtn">Kopiuj ofertę</button>
+          <button class="btn btn-sm btn-success" id="addToBlueprintBtn">Dodaj do gotowca</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    © QualitetMarket • Intelligence Engine
+  </div>
+
+</div>
+
+<script src="js/intelligence.js"></script>
+
+</body>
+</html>

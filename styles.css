@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>QualitetMarket</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body data-require="pro">
+
+<div class="nav">
+  <div class="nav-inner" data-nav>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>QualitetMarket</div>
+      <span data-qm-plan style="margin-left:10px"></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Start</a>
+      <a href="cennik.html">Plany</a>
+      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-cta">
+      <button class="btn btn-sm btn-danger" type="button" onclick="QM.logout()">Wyloguj</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> Produkty • PRO</span>
+    <div class="h1" style="font-size:34px">Panel produktów</div>
+    <div class="p">
+      Tu jest półka produktowa z obrazami. Następny etap: filtry, kategorie, marże, gotowce opisów
+      oraz podpięcie panelu Webkul tylko dla PRO/ELITE.
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="product-grid">
+
+      <div class="product-card reveal d2">
+        <div class="product-img-wrapper">
+          <img class="product-img-real" src="assets/img/produkt_1.png" alt="Produkt 1" loading="lazy">
+        </div>
+        <div class="product-body">
+          <h3 class="product-title">Produkt #1</h3>
+          <div class="product-meta">Opis • cena • marża (do wstawienia)</div>
+          <div class="product-tags">
+            <span class="tag">Kategoria</span><span class="tag">HOT</span>
+          </div>
+          <div style="height:10px"></div>
+          <a class="btn btn-sm btn-primary" href="dashboard.html">Dodaj do planu</a>
+        </div>
+      </div>
+
+      <div class="product-card reveal d3">
+        <div class="product-img-wrapper">
+          <img class="product-img-real" src="assets/img/produkt_2.png" alt="Produkt 2" loading="lazy">
+        </div>
+        <div class="product-body">
+          <h3 class="product-title">Produkt #2</h3>
+          <div class="product-meta">Opis • cena • marża (do wstawienia)</div>
+          <div class="product-tags">
+            <span class="tag">Kategoria</span><span class="tag">PROFIT</span>
+          </div>
+          <div style="height:10px"></div>
+          <a class="btn btn-sm btn-primary" href="dashboard.html">Dodaj do planu</a>
+        </div>
+      </div>
+
+      <div class="product-card reveal d4">
+        <div class="product-img-wrapper">
+          <img class="product-img-real" src="assets/img/produkt_3.png" alt="Produkt 3" loading="lazy">
+        </div>
+        <div class="product-body">
+          <h3 class="product-title">Produkt #3</h3>
+          <div class="product-meta">Opis • cena • marża (do wstawienia)</div>
+          <div class="product-tags">
+            <span class="tag">Kategoria</span><span class="tag">SKALA</span>
+          </div>
+          <div style="height:10px"></div>
+          <a class="btn btn-sm btn-primary" href="dashboard.html">Dodaj do planu</a>
+        </div>
+      </div>
+
+      <div class="product-card reveal d4">
+        <div class="product-img-wrapper">
+          <img class="product-img-real" src="assets/img/produkt_4.png" alt="Produkt 4" loading="lazy">
+        </div>
+        <div class="product-body">
+          <h3 class="product-title">Produkt #4</h3>
+          <div class="product-meta">Opis • cena • marża (do wstawienia)</div>
+          <div class="product-tags">
+            <span class="tag">Kategoria</span><span class="tag">TOP</span>
+          </div>
+          <div style="height:10px"></div>
+          <a class="btn btn-sm btn-primary" href="dashboard.html">Dodaj do planu</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="hero-cta">
+      <a class="btn" href="dashboard.html">Wróć do Dashboard</a>
+      <a class="btn btn-primary" href="cennik.html">Plany</a>
+    </div>
+  </div>
+</div>
+
+<div class="footer">© 2026 QualitetMarket</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

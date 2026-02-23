@@ -1,0 +1,66 @@
+[
+  {
+    "id": "BP-LED-001",
+    "level": "BASIC",
+    "name": "Home LED & Decor",
+    "description": "Estetyka + klimat. Zakupy impulsowe, łatwe opisy, duża elastyczność ceny.",
+    "positioning": "Klimat w pokoju w 5 minut — efekt WOW bez remontu.",
+    "time_to_start": "1 dzień",
+    "pricing_rule": { "market_multiplier": 0.92 },
+    "tags": ["LED", "decor", "prezent", "impuls", "estetyka"],
+    "products": ["QM-001","QM-005","QM-010","QM-019"],
+    "copy_pack": {
+      "brand_name": "GlowHaus",
+      "tone": "premium-minimal",
+      "usp": ["Efekt WOW", "Szybka dostawa", "Idealne na prezent", "Prosta instalacja"]
+    }
+  },
+  {
+    "id": "BP-PROBLEM-002",
+    "level": "PRO",
+    "name": "Problem → Rozwiązanie",
+    "description": "Produkty rozwiązujące konkretne problemy. Najwyższa konwersja na opisach.",
+    "positioning": "Kupujesz, bo masz problem — my dajemy rozwiązanie.",
+    "time_to_start": "1–2 dni",
+    "pricing_rule": { "market_multiplier": 0.91 },
+    "tags": ["problem-solving", "landing", "wysoka konwersja", "opis sprzedaje"],
+    "products": ["QM-003","QM-014","QM-016","QM-018","QM-021"],
+    "copy_pack": {
+      "brand_name": "Fix&Go",
+      "tone": "direct-response",
+      "usp": ["Efekt od razu", "Prosta instrukcja", "Sprawdzone w praktyce", "Wysoka satysfakcja"]
+    }
+  },
+  {
+    "id": "BP-AUTO-003",
+    "level": "PRO",
+    "name": "Auto Quick Fix",
+    "description": "Auto-akcesoria i szybkie naprawy. Sprzedaż na Allegro + tytuły z frazami.",
+    "positioning": "Szybki upgrade auta bez serwisu — tanio i skutecznie.",
+    "time_to_start": "1–2 dni",
+    "pricing_rule": { "market_multiplier": 0.92 },
+    "tags": ["auto", "allegro", "quick fix", "praktyczne"],
+    "products": ["QM-004","QM-017","QM-021","QM-007"],
+    "copy_pack": {
+      "brand_name": "AutoPulse",
+      "tone": "practical",
+      "usp": ["Praktyczne", "Szybka wysyłka", "Pasuje do większości aut", "Dobry prezent"]
+    }
+  },
+  {
+    "id": "BP-ELITE-004",
+    "level": "ELITE",
+    "name": "Viral Gadżety (High Margin)",
+    "description": "Najbardziej agresywny gotowiec. Produkty z wysoką elastycznością ceny i trendem.",
+    "positioning": "To się sprzedaje, bo ludzie to CHCĄ — trend + impuls.",
+    "time_to_start": "1 dzień",
+    "pricing_rule": { "market_multiplier": 0.90 },
+    "tags": ["viral", "tiktok", "wysoka marża", "trend", "impuls"],
+    "products": ["QM-009","QM-012","QM-022","QM-025","QM-002"],
+    "copy_pack": {
+      "brand_name": "ViralDrop",
+      "tone": "fast-hype",
+      "usp": ["Trend", "Wysoka marża", "Łatwe do pokazania na wideo", "Wysoki impuls zakupu"]
+    }
+  }
+]

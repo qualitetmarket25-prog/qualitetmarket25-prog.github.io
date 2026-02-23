@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hurtownie – Zarabianie u Szefa</title>
+<link rel="stylesheet" href="styles.css">
+<script defer src="js/hurtownie.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <span class="badge">QualitetMarket • Dostawcy</span>
+    <h1>System Hurtowni</h1>
+    <p class="muted">Importuj CSV dostawcy i sprawdź ranking opłacalności.</p>
+  </div>
+
+  <div class="card">
+    <h2>Import CSV Hurtowni</h2>
+    <input type="file" id="csvFile" accept=".csv">
+    <button class="btn-primary" onclick="processCSV()">Analizuj hurtownię</button>
+    <div class="hr"></div>
+    <div id="supplierSummary"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ranking Produktów</h2>
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>Produkt</th>
+          <th>Cena hurtowa</th>
+          <th>Cena rynkowa</th>
+          <th>Marża %</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Ranking Hurtowni</h2>
+    <div id="supplierRanking"></div>
+  </div>
+
+  <div class="footer">
+    Zarabianie u Szefa × QualitetMarket
+  </div>
+</div>
+
+</body>
+</html>

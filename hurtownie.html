@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Plany</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner" data-nav>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>Zarabianie u Szefa</div>
+      <span data-qm-plan style="margin-left:10px"></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Start</a>
+      <a href="cennik.html">Plany</a>
+      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-sm btn-primary" href="login.html">Logowanie</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> Plany dostępu</span>
+    <div class="h1" style="font-size:34px">Wybierz poziom</div>
+    <div class="p">
+      BASIC bez panelu sprzedaży. PRO i ELITE z dostępem do panelu Webkul (seller).
+      To było naszym założeniem — i tak zostaje.
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="grid-3">
+
+      <div class="card reveal d2">
+        <h3>BASIC</h3>
+        <p>Start i system, ale bez panelu sprzedaży.</p>
+        <div class="hr"></div>
+        <div class="kpi"><strong>49 zł</strong><span>/ mies.</span></div>
+        <div style="height:12px"></div>
+        <button class="btn" type="button" onclick="pickPlan('BASIC')">Wybieram BASIC</button>
+      </div>
+
+      <div class="card reveal d3" style="border-color:rgba(79,124,255,.35); background:rgba(79,124,255,.08)">
+        <h3>PRO</h3>
+        <p>Dostęp + QualitetMarket + panel sprzedaży (Webkul).</p>
+        <div class="hr"></div>
+        <div class="kpi"><strong>149 zł</strong><span>/ mies.</span></div>
+        <div style="height:12px"></div>
+        <button class="btn btn-primary" type="button" onclick="pickPlan('PRO')">Wybieram PRO</button>
+      </div>
+
+      <div class="card reveal d4">
+        <h3>ELITE</h3>
+        <p>Najwyższy poziom + priorytet + rozbudowane wsparcie.</p>
+        <div class="hr"></div>
+        <div class="kpi"><strong>299 zł</strong><span>/ mies.</span></div>
+        <div style="height:12px"></div>
+        <button class="btn btn-primary" type="button" onclick="pickPlan('ELITE')">Wybieram ELITE</button>
+      </div>
+
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="note">
+      Demo: wybór planu zapisuje się lokalnie. Docelowo podepniemy płatność (Shopify/Stripe) i automatyczne role.
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">© 2026 Zarabianie u Szefa</div>
+
+<script src="assets/app.js"></script>
+<script>
+  // wybór planu + flow:
+  // - jeśli nie zalogowany -> login.html?back=dashboard.html
+  // - jeśli zalogowany -> dashboard.html
+  function pickPlan(plan){
+    if (window.QM && typeof QM.setPlan === "function") {
+      QM.setPlan(plan);
+    } else {
+      localStorage.setItem("qm_plan", plan);
+    }
+
+    // back param jeśli ktoś został przekierowany tu z PRO strony
+    const back = new URLSearchParams(location.search).get("back");
+    const target = back ? decodeURIComponent(back) : "dashboard.html";
+
+    if (!(window.QM && QM.isLogged && QM.isLogged())) {
+      location.href = "login.html?back=" + encodeURIComponent(target);
+      return;
+    }
+    location.href = target;
+  }
+</script>
+</body>
+</html>
