@@ -1,107 +1,182 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Plany</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hurtownie – Zarabianie u Szefa</title>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
+
+  <!-- hurtownie.js fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/hurtownie.js", () => tryLoad("hurtownie.js"));
+    })();
+  </script>
 </head>
+
 <body>
 
-<div class="nav">
-  <div class="nav-inner" data-nav>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div>Zarabianie u Szefa</div>
-      <span data-qm-plan style="margin-left:10px"></span>
+      <div class="brand-title">QualitetMarket</div>
+      <span id="planBadge" class="plan-badge"></span>
     </div>
-    <div class="nav-links">
+
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" data-nav-links>
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="blueprints.html">Blueprints</a>
+      <a class="active" href="hurtownie.html">Hurtownie</a>
       <a href="dashboard.html">Dashboard</a>
-    </div>
-    <div class="nav-cta">
-      <a class="btn btn-sm btn-primary" href="login.html">Logowanie</a>
+
+      <div class="nav-links-sep"></div>
+
+      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
     </div>
   </div>
 </div>
 
 <div class="wrap">
+
   <div class="hero-card reveal">
-    <span class="badge"><span class="dot"></span> Plany dostępu</span>
-    <div class="h1" style="font-size:34px">Wybierz poziom</div>
-    <div class="p">
-      BASIC bez panelu sprzedaży. PRO i ELITE z dostępem do panelu Webkul (seller).
-      To było naszym założeniem — i tak zostaje.
-    </div>
+    <span class="badge"><span class="dot"></span> QualitetMarket • Dostawcy</span>
+    <div class="h1">System Hurtowni</div>
+    <div class="p">Importuj CSV dostawcy i sprawdź ranking opłacalności.</div>
 
     <div class="hr"></div>
 
-    <div class="grid-3">
-
-      <div class="card reveal d2">
-        <h3>BASIC</h3>
-        <p>Start i system, ale bez panelu sprzedaży.</p>
-        <div class="hr"></div>
-        <div class="kpi"><strong>49 zł</strong><span>/ mies.</span></div>
-        <div style="height:12px"></div>
-        <button class="btn" type="button" onclick="pickPlan('BASIC')">Wybieram BASIC</button>
-      </div>
-
-      <div class="card reveal d3" style="border-color:rgba(79,124,255,.35); background:rgba(79,124,255,.08)">
-        <h3>PRO</h3>
-        <p>Dostęp + QualitetMarket + panel sprzedaży (Webkul).</p>
-        <div class="hr"></div>
-        <div class="kpi"><strong>149 zł</strong><span>/ mies.</span></div>
-        <div style="height:12px"></div>
-        <button class="btn btn-primary" type="button" onclick="pickPlan('PRO')">Wybieram PRO</button>
-      </div>
-
-      <div class="card reveal d4">
-        <h3>ELITE</h3>
-        <p>Najwyższy poziom + priorytet + rozbudowane wsparcie.</p>
-        <div class="hr"></div>
-        <div class="kpi"><strong>299 zł</strong><span>/ mies.</span></div>
-        <div style="height:12px"></div>
-        <button class="btn btn-primary" type="button" onclick="pickPlan('ELITE')">Wybieram ELITE</button>
-      </div>
-
+    <div class="hero-cta">
+      <a class="btn btn-secondary" href="intelligence.html">Sprawdź Intelligence</a>
+      <a class="btn" href="blueprints.html">Blueprints</a>
+      <a class="btn" href="dashboard.html">Dashboard</a>
     </div>
-
-    <div class="hr"></div>
-
-    <div class="note">
-      Demo: wybór planu zapisuje się lokalnie. Docelowo podepniemy płatność (Shopify/Stripe) i automatyczne role.
-    </div>
-
   </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Import CSV Hurtowni</h2>
+      <p>Wczytaj plik CSV i uruchom analizę. Wyniki pojawią się niżej.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card reveal d2">
+        <h3 style="margin:0 0 10px;">Plik CSV</h3>
+        <input class="input" type="file" id="csvFile" accept=".csv">
+        <div style="height:10px"></div>
+        <button class="btn btn-primary" type="button" onclick="processCSV()">Analizuj hurtownię</button>
+        <div class="hr"></div>
+        <div id="supplierSummary" class="muted"></div>
+      </div>
+
+      <div class="card reveal d3">
+        <h3 style="margin:0 0 10px;">Ranking Hurtowni</h3>
+        <div id="supplierRanking" class="muted"></div>
+        <div class="hr"></div>
+        <div class="note">
+          Tip: im więcej hurtowni wrzucisz (osobne CSV), tym lepszy ranking i decyzja “co brać”.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Ranking Produktów</h2>
+      <p>Lista produktów z marżą i scoringiem (przewijana tabela na telefonie).</p>
+    </div>
+
+    <div class="card reveal d2">
+      <div class="table-wrap">
+        <table class="table" id="resultsTable">
+          <thead>
+            <tr>
+              <th>Produkt</th>
+              <th>Cena hurtowa</th>
+              <th>Cena rynkowa</th>
+              <th>Marża %</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<div class="footer">© 2026 Zarabianie u Szefa</div>
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<script src="assets/app.js"></script>
+<!-- assets/app.js fallback: assets/ oraz root -->
 <script>
-  // wybór planu + flow:
-  // - jeśli nie zalogowany -> login.html?back=dashboard.html
-  // - jeśli zalogowany -> dashboard.html
-  function pickPlan(plan){
-    if (window.QM && typeof QM.setPlan === "function") {
-      QM.setPlan(plan);
-    } else {
-      localStorage.setItem("qm_plan", plan);
-    }
-
-    // back param jeśli ktoś został przekierowany tu z PRO strony
-    const back = new URLSearchParams(location.search).get("back");
-    const target = back ? decodeURIComponent(back) : "dashboard.html";
-
-    if (!(window.QM && QM.isLogged && QM.isLogged())) {
-      location.href = "login.html?back=" + encodeURIComponent(target);
-      return;
-    }
-    location.href = target;
-  }
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
 </script>
+
+<script>
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>
+
 </body>
 </html>
