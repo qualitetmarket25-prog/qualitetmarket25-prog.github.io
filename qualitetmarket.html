@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Logowanie – Zarabianie u Szefa</title>
+  <title>QualitetMarket – Zarabianie u Szefa</title>
   <link rel="stylesheet" href="styles.css">
 
   <!-- planGuard fallback: /js/ oraz root -->
@@ -27,8 +27,8 @@
   <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div class="brand-title">Zarabianie u Szefa</div>
-      <span data-qm-plan class="plan-badge"></span>
+      <div class="brand-title">QualitetMarket</div>
+      <span id="planBadge" class="plan-badge"></span>
     </div>
 
     <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
@@ -38,102 +38,146 @@
     <div class="nav-links" data-nav-links>
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a class="active" href="qualitetmarket.html">QualitetMarket</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="blueprints.html">Blueprints</a>
+      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a href="dashboard.html">Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="cennik.html">Wybierz plan</a>
+      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
     </div>
   </div>
 </div>
 
 <div class="wrap">
-  <div class="grid-2">
 
-    <div class="hero-card reveal">
-      <span class="badge"><span class="dot"></span> Dostęp do panelu</span>
-      <div class="h1">Logowanie (demo)</div>
-      <div class="p">
-        Na tym etapie robimy wersję demonstracyjną.
-        Zaloguj się emailem (demo) i wejdź do dashboardu.
-      </div>
-
-      <div class="hr"></div>
-
-      <!-- ✅ LOGOWANIE (demo) -->
-      <form data-login-form>
-        <input class="input" type="email" name="email" placeholder="Twój email" required />
-        <div style="height:10px"></div>
-        <button class="btn btn-primary" type="submit">Zaloguj się</button>
-      </form>
-
-      <div class="hr"></div>
-
-      <div class="hero-cta">
-        <button class="btn btn-primary" type="button" onclick="activateProDemo()">Wejdź jako PRO</button>
-        <a class="btn" href="cennik.html">Zobacz plany</a>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="note">
-        Docelowo tu będzie: konto, hasło, reset, oraz weryfikacja płatności.
-      </div>
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> Marketplace System</span>
+    <div class="h1">QualitetMarket</div>
+    <div class="p">
+      Centrum pracy nad ofertą: wybór produktów, marża, dostawcy, content i publikacja.
+      PRO/ELITE zawiera dostęp do panelu sprzedaży Webkul (SP Seller).
     </div>
 
-    <div class="panel reveal d2">
-      <h3 style="margin:0 0 10px;">Dlaczego demo?</h3>
+    <div class="hr"></div>
 
-      <div class="list">
-        <div class="item reveal d2">
-          <div class="icon">🧱</div>
-          <div>
-            <b>Najpierw stabilny front</b>
-            <div class="muted-xs">UI, flow, CTA, strony, blokady.</div>
-          </div>
-        </div>
-
-        <div class="item reveal d3">
-          <div class="icon">💳</div>
-          <div>
-            <b>Potem płatności</b>
-            <div class="muted-xs">Stripe / integracje — i dopiero realne role.</div>
-          </div>
-        </div>
-
-        <div class="item reveal d4">
-          <div class="icon">🔐</div>
-          <div>
-            <b>Potem backend</b>
-            <div class="muted-xs">Firebase / Supabase — realne konta i dane.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-      <button class="btn btn-danger" type="button" onclick="(window.QM && QM.logout) ? QM.logout() : (localStorage.clear(), location.href='index.html')">
-        Wyloguj / wyczyść dostęp
-      </button>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="intelligence.html">Sprawdź produkt (Intelligence)</a>
+      <a class="btn" href="hurtownie.html">Wejdź w Hurtownie</a>
+      <a class="btn btn-secondary" href="blueprints.html">Blueprinty wdrożenia</a>
+      <a class="btn" href="cennik.html">Upgrade planu</a>
     </div>
-
   </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Moduły QualitetMarket</h2>
+      <p>To jest Twoja ścieżka pracy: produkt → wynik → wdrożenie → sprzedaż.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card reveal d2">
+        <h3>Intelligence</h3>
+        <p>Scoring, marża, koszty i szybka decyzja: brać czy nie.</p>
+        <div class="hr"></div>
+        <a class="btn btn-primary" href="intelligence.html">Otwórz Intelligence</a>
+      </div>
+
+      <div class="card reveal d3">
+        <h3>Hurtownie</h3>
+        <p>Import CSV, selekcja ofert i dostawców pod marżę.</p>
+        <div class="hr"></div>
+        <a class="btn btn-secondary" href="hurtownie.html">Otwórz Hurtownie</a>
+      </div>
+
+      <div class="card reveal d4">
+        <h3>Blueprints</h3>
+        <p>Gotowe schematy sprzedażowe, które wdrażasz od ręki.</p>
+        <div class="hr"></div>
+        <a class="btn" href="blueprints.html">Otwórz Blueprints</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Dostęp do panelu Webkul (SP Seller)</h2>
+      <p>BASIC nie ma panelu. PRO/ELITE mają — dlatego są droższe.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card reveal d2">
+        <h3>Masz BASIC</h3>
+        <p class="p">
+          Masz podgląd i ograniczone moduły. Jeśli chcesz panel sprzedaży Webkul i pełen workflow —
+          przejdź na PRO/ELITE.
+        </p>
+        <div class="hr"></div>
+        <div class="hero-cta" style="margin:0;">
+          <a class="btn btn-primary" href="cennik.html">Zobacz plany</a>
+          <a class="btn" href="aktywuj-pro.html">Aktywuj PRO (demo)</a>
+        </div>
+      </div>
+
+      <div class="card reveal d3">
+        <h3>Masz PRO / ELITE</h3>
+        <p class="p">
+          Dostajesz dostęp do panelu Webkul (SP Seller) oraz pełne moduły QualitetMarket.
+          W demo widzisz flow i UI — docelowo tu będzie weryfikacja płatności.
+        </p>
+        <div class="hr"></div>
+        <div class="hero-cta" style="margin:0;">
+          <a class="btn btn-secondary" href="dashboard.html">Przejdź do Dashboard</a>
+          <a class="btn" href="intelligence.html">Start: Intelligence</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Najbliższy cel</h2>
+      <p>Żeby to zarabiało: wybierz 1 produkt i dowieź publikację + ruch.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card reveal d2">
+        <h3>Krok 1: Wybór produktu</h3>
+        <p>Wchodzisz do Intelligence i oceniasz opłacalność.</p>
+      </div>
+      <div class="card reveal d3">
+        <h3>Krok 2: Dostawca</h3>
+        <p>W Hurtowniach wybierasz dostawcę i warunki.</p>
+      </div>
+      <div class="card reveal d4">
+        <h3>Krok 3: Blueprint</h3>
+        <p>Wdrażasz gotowy schemat sprzedaży i publikujesz.</p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
+<!-- assets/app.js fallback: assets/ oraz root -->
 <script>
-  // Demo: ustawia PRO + loguje i przerzuca do dashboard
-  function activateProDemo(){
-    localStorage.setItem("qm_user", "demo@pro.local");
-    if (window.QM && typeof window.QM.setPlan === "function") {
-      window.QM.setPlan("PRO");
-    } else {
-      localStorage.setItem("qm_plan", "PRO");
-    }
-    window.location.href = "dashboard.html";
-  }
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
 
+<script>
   // mobilne menu (hamburger)
   (function () {
     const root = document.querySelector("[data-nav-root]");
@@ -157,34 +201,6 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") close();
     });
-  })();
-</script>
-
-<!-- assets/app.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
-
-<!-- auth.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/auth.js", () => tryLoad("auth.js"));
   })();
 </script>
 
