@@ -518,3 +518,33 @@ button{ font-family:inherit; }
   background: rgba(255,255,255,.06);
   flex: 0 0 auto;
 }
+/* ===== Tables (patch) ===== */
+.table-wrap{
+  width:100%;
+  overflow:auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.12);
+}
+.table{
+  width:100%;
+  border-collapse: collapse;
+  min-width: 760px; /* żeby na mobile dało się przewijać */
+}
+.table th, .table td{
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  text-align:left;
+  font-size: 13px;
+  color: rgba(234,240,255,.88);
+  white-space: nowrap;
+}
+.table th{
+  font-size: 12px;
+  letter-spacing: .02em;
+  color: rgba(234,240,255,.70);
+  background: rgba(255,255,255,.04);
+  position: sticky;
+  top: 0;
+}
+.table tr:hover td{ background: rgba(255,255,255,.03); }
