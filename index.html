@@ -3,31 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Dashboard – Zarabianie u Szefa</title>
+  <title>Zarabianie u Szefa – Start</title>
   <link rel="stylesheet" href="styles.css">
-  <script defer src="js/planGuard.js"></script>
+
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
 </head>
 
-<body data-require="login">
+<body>
 
-<div class="nav">
-  <div class="nav-inner" data-nav>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div>Zarabianie u Szefa</div>
-      <span id="planBadge" style="margin-left:10px"></span>
+      <div class="brand-title">Zarabianie u Szefa</div>
+      <span id="planBadge" class="plan-badge"></span>
     </div>
-    <div class="nav-links">
-      <a href="index.html">Start</a>
+
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" data-nav-links>
+      <a class="active" href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
       <a href="intelligence.html">Intelligence</a>
       <a href="blueprints.html">Blueprints</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a href="dashboard.html">Dashboard</a>
-    </div>
-    <div class="nav-cta">
-      <button class="btn btn-sm btn-danger" onclick="logout()">Wyloguj</button>
+
+      <div class="nav-links-sep"></div>
+
+      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
     </div>
   </div>
 </div>
@@ -35,79 +55,74 @@
 <div class="wrap">
 
   <div class="hero-card reveal">
-    <span class="badge"><span class="dot"></span> Panel Sterowania</span>
-    <div class="h1" style="font-size:34px">Dashboard</div>
-    <div class="p">Centrum kontroli Twojego systemu sprzedażowego.</div>
-
-    <div class="grid-3">
-
-      <div class="kpi reveal d2">
-        <div>
-          <strong>Plan</strong>
-          <div style="color:var(--muted);font-size:12px">Aktywny dostęp</div>
-        </div>
-        <span id="currentPlan">BASIC</span>
-      </div>
-
-      <div class="kpi reveal d3">
-        <div>
-          <strong>Moduły</strong>
-          <div style="color:var(--muted);font-size:12px">Dostępne funkcje</div>
-        </div>
-        <span id="moduleAccess">Ograniczone</span>
-      </div>
-
-      <div class="kpi reveal d4">
-        <div>
-          <strong>Status</strong>
-          <div style="color:var(--muted);font-size:12px">System</div>
-        </div>
-        <span>Aktywny</span>
-      </div>
-
-    </div>
+    <span class="badge"><span class="dot"></span> Platforma w budowie (demo)</span>
+    <div class="h1">Zarabianie u Szefa</div>
+    <div class="p">System do wyboru produktów, liczenia marży i wdrażania gotowych schematów sprzedaży — wszystko w wersji mobile-first.</div>
 
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-primary" href="qualitetmarket.html">QualitetMarket</a>
-      <a class="btn" href="intelligence.html">Intelligence</a>
-      <a class="btn" href="blueprints.html">Blueprints</a>
-      <a class="btn btn-secondary" href="hurtownie.html" id="hurtownieBtn">System Hurtowni</a>
-      <a class="btn" href="cennik.html">Upgrade planu</a>
+      <a class="btn btn-primary" href="cennik.html">Zobacz plany</a>
+      <a class="btn" href="qualitetmarket.html">Wejdź do QualitetMarket</a>
+      <a class="btn btn-secondary" href="intelligence.html">Sprawdź Intelligence</a>
+      <a class="btn" href="dashboard.html">Przejdź do Dashboard</a>
     </div>
   </div>
 
   <div class="section">
     <div class="section-title reveal">
-      <h2>Twoje następne kroki</h2>
-      <p>Produkt → Marża → Dostawca → Ruch → Sprzedaż.</p>
+      <h2>Co tu robisz w 3 krokach</h2>
+      <p>Prosto: produkt → wynik → wdrożenie.</p>
     </div>
 
     <div class="cards">
-
       <div class="card reveal d2">
         <h3>1) Intelligence</h3>
-        <p>Sprawdź scoring i marżę produktu.</p>
+        <p>Scoring produktu + szybka ocena opłacalności.</p>
       </div>
-
       <div class="card reveal d3">
         <h3>2) Hurtownie</h3>
-        <p>Wczytaj CSV dostawcy i oceń opłacalność.</p>
+        <p>Dostawcy i CSV — selekcja ofert, które mają sens.</p>
       </div>
-
       <div class="card reveal d4">
-        <h3>3) Blueprint</h3>
-        <p>Wdrażaj gotowe schematy sprzedażowe.</p>
+        <h3>3) Blueprints</h3>
+        <p>Gotowe schematy sprzedaży, które wdrażasz od ręki.</p>
       </div>
-
     </div>
   </div>
 
-</div> 
+</div>
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script src="assets/app.js"></script>
+
+<script>
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>
+
 </body>
 </html>
