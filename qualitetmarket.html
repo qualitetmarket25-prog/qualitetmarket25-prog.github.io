@@ -3,25 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Logowanie</title>
+  <title>Logowanie – Zarabianie u Szefa</title>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
 </head>
+
 <body>
 
-<div class="nav">
-  <div class="nav-inner" data-nav>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div>Zarabianie u Szefa</div>
-      <span data-qm-plan style="margin-left:10px"></span>
+      <div class="brand-title">Zarabianie u Szefa</div>
+      <span data-qm-plan class="plan-badge"></span>
     </div>
-    <div class="nav-links">
+
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" data-nav-links>
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
       <a href="dashboard.html">Dashboard</a>
-    </div>
-    <div class="nav-cta">
+
+      <div class="nav-links-sep"></div>
+
       <a class="btn btn-sm btn-primary" href="cennik.html">Wybierz plan</a>
     </div>
   </div>
@@ -32,7 +53,7 @@
 
     <div class="hero-card reveal">
       <span class="badge"><span class="dot"></span> Dostęp do panelu</span>
-      <div class="h1" style="font-size:34px">Logowanie (demo)</div>
+      <div class="h1">Logowanie (demo)</div>
       <div class="p">
         Na tym etapie robimy wersję demonstracyjną.
         Zaloguj się emailem (demo) i wejdź do dashboardu.
@@ -55,36 +76,51 @@
       </div>
 
       <div class="hr"></div>
+
       <div class="note">
         Docelowo tu będzie: konto, hasło, reset, oraz weryfikacja płatności.
       </div>
     </div>
 
     <div class="panel reveal d2">
-      <h3>Dlaczego demo?</h3>
+      <h3 style="margin:0 0 10px;">Dlaczego demo?</h3>
+
       <div class="list">
         <div class="item reveal d2">
           <div class="icon">🧱</div>
-          <div><b>Najpierw stabilny front</b><div>UI, flow, CTA, strony, blokady.</div></div>
+          <div>
+            <b>Najpierw stabilny front</b>
+            <div class="muted-xs">UI, flow, CTA, strony, blokady.</div>
+          </div>
         </div>
+
         <div class="item reveal d3">
           <div class="icon">💳</div>
-          <div><b>Potem płatności</b><div>Stripe/Shopify – i dopiero realne role.</div></div>
+          <div>
+            <b>Potem płatności</b>
+            <div class="muted-xs">Stripe / integracje — i dopiero realne role.</div>
+          </div>
         </div>
+
         <div class="item reveal d4">
           <div class="icon">🔐</div>
-          <div><b>Potem backend</b><div>Firebase/Supabase – realne konta i dane.</div></div>
+          <div>
+            <b>Potem backend</b>
+            <div class="muted-xs">Firebase / Supabase — realne konta i dane.</div>
+          </div>
         </div>
       </div>
 
       <div class="hr"></div>
-      <button class="btn btn-danger" type="button" onclick="QM.logout()">Wyloguj / wyczyść dostęp</button>
+      <button class="btn btn-danger" type="button" onclick="(window.QM && QM.logout) ? QM.logout() : (localStorage.clear(), location.href='index.html')">
+        Wyloguj / wyczyść dostęp
+      </button>
     </div>
 
   </div>
 </div>
 
-<div class="footer">© 2026 Zarabianie u Szefa</div>
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script>
   // Demo: ustawia PRO + loguje i przerzuca do dashboard
@@ -97,9 +133,60 @@
     }
     window.location.href = "dashboard.html";
   }
+
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
 </script>
 
-<script src="assets/app.js"></script>
-<script src="assets/auth.js"></script>
+<!-- assets/app.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
+
+<!-- auth.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/auth.js", () => tryLoad("auth.js"));
+  })();
+</script>
+
 </body>
 </html>
