@@ -1,54 +1,301 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hurtownie – Zarabianie u Szefa</title>
-<link rel="stylesheet" href="styles.css">
-<script defer src="js/hurtownie.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligence – Zarabianie u Szefa</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
 </head>
+
 <body>
 
-<div class="wrap">
-  <div class="card">
-    <span class="badge">QualitetMarket • Dostawcy</span>
-    <h1>System Hurtowni</h1>
-    <p class="muted">Importuj CSV dostawcy i sprawdź ranking opłacalności.</p>
-  </div>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="brand-title">QualitetMarket</div>
+      <span id="planBadge" class="plan-badge"></span>
+    </div>
 
-  <div class="card">
-    <h2>Import CSV Hurtowni</h2>
-    <input type="file" id="csvFile" accept=".csv">
-    <button class="btn-primary" onclick="processCSV()">Analizuj hurtownię</button>
-    <div class="hr"></div>
-    <div id="supplierSummary"></div>
-  </div>
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
 
-  <div class="card">
-    <h2>Ranking Produktów</h2>
-    <table id="resultsTable">
-      <thead>
-        <tr>
-          <th>Produkt</th>
-          <th>Cena hurtowa</th>
-          <th>Cena rynkowa</th>
-          <th>Marża %</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <div class="nav-links" data-nav-links>
+      <a href="index.html">Start</a>
+      <a href="cennik.html">Plany</a>
+      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a class="active" href="intelligence.html">Intelligence</a>
+      <a href="blueprints.html">Blueprints</a>
+      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="dashboard.html">Dashboard</a>
 
-  <div class="card">
-    <h2>Ranking Hurtowni</h2>
-    <div id="supplierRanking"></div>
-  </div>
+      <div class="nav-links-sep"></div>
 
-  <div class="footer">
-    Zarabianie u Szefa × QualitetMarket
+      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
+    </div>
   </div>
 </div>
+
+<div class="wrap">
+
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> QualitetMarket • Scoring</span>
+    <div class="h1">Intelligence</div>
+    <div class="p">Wpisz parametry produktu i dostajesz marżę, BEP oraz prosty score “czy warto” — bez backendu.</div>
+
+    <div class="hr"></div>
+
+    <div class="hero-cta">
+      <a class="btn btn-secondary" href="hurtownie.html">Zaciągnij z Hurtowni</a>
+      <a class="btn" href="blueprints.html">Blueprints</a>
+      <a class="btn" href="dashboard.html">Dashboard</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Kalkulator opłacalności</h2>
+      <p>Uzupełnij pola i kliknij “Policz”.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card reveal d2">
+        <h3 style="margin:0 0 10px;">Dane produktu</h3>
+
+        <label class="label">Nazwa produktu</label>
+        <input class="input" id="pName" placeholder="np. Etui do iPhone 15" />
+
+        <div style="height:10px"></div>
+
+        <div class="grid-2">
+          <div>
+            <label class="label">Cena hurtowa (zakup)</label>
+            <input class="input" id="buy" type="number" step="0.01" placeholder="np. 19.90" />
+          </div>
+          <div>
+            <label class="label">Cena sprzedaży (brutto)</label>
+            <input class="input" id="sell" type="number" step="0.01" placeholder="np. 59.90" />
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="grid-2">
+          <div>
+            <label class="label">Koszt wysyłki</label>
+            <input class="input" id="ship" type="number" step="0.01" placeholder="np. 10.00" />
+          </div>
+          <div>
+            <label class="label">Prowizje / fees</label>
+            <input class="input" id="fee" type="number" step="0.01" placeholder="np. 6.00" />
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="grid-2">
+          <div>
+            <label class="label">Reklama / koszt pozyskania</label>
+            <input class="input" id="ads" type="number" step="0.01" placeholder="np. 8.00" />
+          </div>
+          <div>
+            <label class="label">Zwroty / ryzyko (zł)</label>
+            <input class="input" id="risk" type="number" step="0.01" placeholder="np. 3.00" />
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="hero-cta" style="margin:0;">
+          <button class="btn btn-primary" type="button" onclick="calc()">Policz</button>
+          <button class="btn" type="button" onclick="resetCalc()">Wyczyść</button>
+        </div>
+
+        <div class="hr"></div>
+        <div class="note">
+          Tip: zacznij od 1 produktu i dowieź go do sprzedaży. Dopiero potem skaluj listę.
+        </div>
+      </div>
+
+      <div class="card reveal d3">
+        <h3 style="margin:0 0 10px;">Wynik</h3>
+
+        <div class="grid-3" style="margin-top:0;">
+          <div class="kpi">
+            <div>
+              <strong>Marża</strong>
+              <div class="muted-xs">zysk / szt.</div>
+            </div>
+            <span id="outProfit">—</span>
+          </div>
+
+          <div class="kpi">
+            <div>
+              <strong>Marża %</strong>
+              <div class="muted-xs">profit / cena</div>
+            </div>
+            <span id="outMargin">—</span>
+          </div>
+
+          <div class="kpi">
+            <div>
+              <strong>Score</strong>
+              <div class="muted-xs">0–100</div>
+            </div>
+            <span id="outScore">—</span>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid-2">
+          <div class="card soft">
+            <h3 style="margin:0 0 6px;">BEP (break-even)</h3>
+            <p class="p" style="margin:0;">Minimalna cena sprzedaży, żeby wyjść na 0.</p>
+            <div class="hr"></div>
+            <div class="p" style="font-weight:900;margin:0;" id="outBep">—</div>
+          </div>
+
+          <div class="card soft">
+            <h3 style="margin:0 0 6px;">Rekomendacja</h3>
+            <p class="p" style="margin:0;" id="outReco">—</p>
+            <div class="hr"></div>
+            <div class="muted-xs" id="outWhy">—</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="card soft">
+          <h3 style="margin:0 0 6px;">Checklist do odpalenia sprzedaży</h3>
+          <div class="muted-xs">1) 3 zdjęcia + 1 wideo</div>
+          <div class="muted-xs">2) 1 mocny tytuł + 3 bullet’y</div>
+          <div class="muted-xs">3) 1 kanał ruchu (OLX / Allegro / TikTok)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
+
+<!-- assets/app.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
+
+<script>
+  function n(v){ v = Number(v); return isFinite(v) ? v : 0; }
+  function money(x){ return (Math.round(x*100)/100).toFixed(2) + " zł"; }
+
+  function calc(){
+    const buy = n(document.getElementById("buy").value);
+    const sell = n(document.getElementById("sell").value);
+    const ship = n(document.getElementById("ship").value);
+    const fee  = n(document.getElementById("fee").value);
+    const ads  = n(document.getElementById("ads").value);
+    const risk = n(document.getElementById("risk").value);
+
+    const cost = buy + ship + fee + ads + risk;
+    const profit = sell - cost;
+    const margin = sell > 0 ? (profit / sell) * 100 : 0;
+    const bep = cost;
+
+    // Score: prosty, szybki, bez udawania AI (0–100)
+    let score = 0;
+    if (profit <= 0) score = 0;
+    else {
+      score += Math.min(40, (profit / Math.max(1, buy)) * 25); // relacja zysku do zakupu
+      score += Math.min(40, margin * 1.2);                    // % marży
+      score += Math.max(0, 20 - (ads * 1.5));                 // kara za CAC
+      score = Math.max(0, Math.min(100, score));
+    }
+
+    document.getElementById("outProfit").textContent = profit > 0 ? money(profit) : money(profit);
+    document.getElementById("outMargin").textContent = (Math.round(margin*10)/10).toFixed(1) + "%";
+    document.getElementById("outScore").textContent = Math.round(score);
+
+    document.getElementById("outBep").textContent = money(bep);
+
+    let reco = "Odrzuć";
+    let why = "Zysk ≤ 0 albo marża za niska.";
+    if (profit > 0 && margin >= 25 && score >= 60){
+      reco = "Bierz i testuj";
+      why = "Marża i score wyglądają dobrze – rób listing i ruch.";
+    } else if (profit > 0 && margin >= 15 && score >= 40){
+      reco = "Warunkowo";
+      why = "Może przejść, ale tnij koszty (ads/fees) albo podnieś cenę.";
+    } else if (profit > 0){
+      reco = "Słabe";
+      why = "Jest zysk, ale mały – ryzyko zjada wynik.";
+    }
+
+    document.getElementById("outReco").textContent = reco;
+    document.getElementById("outWhy").textContent = why;
+  }
+
+  function resetCalc(){
+    ["pName","buy","sell","ship","fee","ads","risk"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    ["outProfit","outMargin","outScore","outBep","outReco","outWhy"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "—";
+    });
+  }
+
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>
 
 </body>
 </html>
