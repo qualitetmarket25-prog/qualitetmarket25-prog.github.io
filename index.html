@@ -95,7 +95,19 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<script src="assets/app.js"></script>
+<!-- assets/app.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
 
 <script>
   // mobilne menu (hamburger)
