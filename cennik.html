@@ -3,70 +3,188 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Aktywuj PRO</title>
+  <title>Plany i Cennik – Zarabianie u Szefa</title>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
 </head>
+
 <body>
 
-<div class="nav">
-  <div class="nav-inner" data-nav>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div>Zarabianie u Szefa</div>
-      <span data-qm-plan style="margin-left:10px"></span>
+      <div class="brand-title">Zarabianie u Szefa</div>
+      <span id="planBadge" class="plan-badge"></span>
     </div>
-    <div class="nav-links">
+
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" data-nav-links>
       <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
+      <a class="active" href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="blueprints.html">Blueprints</a>
+      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a href="dashboard.html">Dashboard</a>
-    </div>
-    <div class="nav-cta">
-      <a class="btn btn-sm btn-ghost" href="cennik.html">Wróć</a>
+
+      <div class="nav-links-sep"></div>
+
+      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
     </div>
   </div>
 </div>
 
 <div class="wrap">
-  <div class="hero-card reveal">
-    <span class="badge"><span class="dot"></span> Aktywacja (demo)</span>
-    <div class="h1" style="font-size:34px">Aktywuj dostęp PRO</div>
-    <div class="p">
-      W demo kliknięcie nadaje PRO (localStorage). Docelowo w tym miejscu będzie weryfikacja płatności
-      i automatyczne role.
-    </div>
 
-    <div class="hero-cta">
-      <button class="btn btn-primary" type="button" onclick="activateProDemo()">Aktywuj PRO</button>
-      <a class="btn" href="login.html">Logowanie</a>
-      <a class="btn btn-success" href="dashboard.html">Mam już PRO</a>
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> Plany dostępu</span>
+    <div class="h1">Cennik</div>
+    <div class="p">Wybierz plan pod tempo i skalę. PRO/ELITE zawiera dostęp do panelu sprzedaży Webkul (SP Seller).</div>
+
+    <div class="hr"></div>
+
+    <div class="grid-3">
+
+      <!-- BASIC -->
+      <div class="card reveal d2">
+        <span class="badge" style="border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.05);">
+          BASIC
+        </span>
+        <h3 style="margin:12px 0 6px;">Start / test</h3>
+        <div class="p" style="margin-bottom:12px;">Dla wejścia w system i przeglądu modułów.</div>
+
+        <div class="hr"></div>
+
+        <div class="muted-xs">✅ dostęp do podstawowych stron</div>
+        <div class="muted-xs">✅ podgląd workflow (demo)</div>
+        <div class="muted-xs">⛔ brak panelu Webkul (SP Seller)</div>
+        <div class="muted-xs">⛔ ograniczone moduły</div>
+
+        <div class="hr"></div>
+
+        <div class="p" style="font-weight:900;margin:0 0 10px;">0 zł (demo)</div>
+        <a class="btn" href="login.html">Zaloguj</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="card reveal d3" style="border-color:rgba(110,231,255,.22);">
+        <span class="badge" style="border-color:rgba(110,231,255,.30);background:rgba(110,231,255,.08);">
+          PRO
+        </span>
+        <h3 style="margin:12px 0 6px;">Realna praca</h3>
+        <div class="p" style="margin-bottom:12px;">Dla sprzedaży i wdrażania systemu krok po kroku.</div>
+
+        <div class="hr"></div>
+
+        <div class="muted-xs">✅ pełny dostęp do modułów (docelowo)</div>
+        <div class="muted-xs">✅ Intelligence + Blueprints</div>
+        <div class="muted-xs">✅ Hurtownie (CSV, selekcja)</div>
+        <div class="muted-xs">✅ dostęp do panelu Webkul (SP Seller)</div>
+
+        <div class="hr"></div>
+
+        <div class="p" style="font-weight:900;margin:0 0 10px;">99 zł / mies. (docelowo)</div>
+        <div class="hero-cta" style="margin:0;">
+          <a class="btn btn-primary" href="aktywuj-pro.html">Aktywuj PRO</a>
+          <a class="btn" href="dashboard.html">Mam PRO</a>
+        </div>
+      </div>
+
+      <!-- ELITE -->
+      <div class="card reveal d4" style="border-color:rgba(167,139,250,.22);">
+        <span class="badge" style="border-color:rgba(167,139,250,.30);background:rgba(167,139,250,.08);">
+          ELITE
+        </span>
+        <h3 style="margin:12px 0 6px;">Skalowanie</h3>
+        <div class="p" style="margin-bottom:12px;">Dla większej skali, priorytetu i automatyzacji.</div>
+
+        <div class="hr"></div>
+
+        <div class="muted-xs">✅ wszystko z PRO</div>
+        <div class="muted-xs">✅ priorytetowe aktualizacje i moduły</div>
+        <div class="muted-xs">✅ rozbudowane filtry/eksporty</div>
+        <div class="muted-xs">✅ dostęp do panelu Webkul (SP Seller)</div>
+
+        <div class="hr"></div>
+
+        <div class="p" style="font-weight:900;margin:0 0 10px;">199 zł / mies. (docelowo)</div>
+        <a class="btn btn-secondary" href="aktywuj-pro.html">Aktywuj ELITE (demo)</a>
+      </div>
+
     </div>
 
     <div class="hr"></div>
-    <div class="note">
-      Jeśli chcesz — w kolejnym kroku robimy PWA (instalacja jak apka: ikona, fullscreen, “Add to Home Screen”).
+
+    <div class="card soft">
+      <h3 style="margin:0 0 6px;">Dlaczego PRO/ELITE droższe?</h3>
+      <p class="p" style="margin:0;">
+        Bo zawierają dostęp do panelu sprzedaży Webkul (SP Seller). BASIC nie ma panelu — tylko podgląd i ograniczone moduły.
+      </p>
     </div>
   </div>
+
 </div>
 
-<div class="footer">© 2026 Zarabianie u Szefa</div>
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<script src="assets/app.js"></script>
+<!-- assets/app.js fallback: assets/ oraz root -->
 <script>
-  function activateProDemo(){
-    // jeśli nie zalogowany -> najpierw login
-    if (!(window.QM && QM.isLogged && QM.isLogged())) {
-      location.href = "login.html?back=" + encodeURIComponent("dashboard.html");
-      return;
-    }
-    // ustaw PRO i przejdź do panelu
-    if (window.QM && typeof QM.setPlan === "function") {
-      QM.setPlan("PRO");
-    } else {
-      localStorage.setItem("qm_plan", "PRO");
-    }
-    location.href = "dashboard.html";
-  }
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
 </script>
+
+<script>
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>
+
 </body>
 </html>
