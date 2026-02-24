@@ -548,3 +548,12 @@ button{ font-family:inherit; }
   top: 0;
 }
 .table tr:hover td{ background: rgba(255,255,255,.03); }
+/* ===== Labels (patch) ===== */
+.label{
+  display:block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  color: rgba(234,240,255,.70);
+  margin: 2px 0 6px;
+}
