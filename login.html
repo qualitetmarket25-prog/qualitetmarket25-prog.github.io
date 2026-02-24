@@ -3,264 +3,190 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Zarabianie u Szefa</title>
+  <title>Logowanie – Zarabianie u Szefa</title>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
 </head>
+
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <div class="nav-inner" data-nav>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div>Zarabianie u Szefa</div>
-      <span data-qm-plan style="margin-left:10px"></span>
+      <div class="brand-title">Zarabianie u Szefa</div>
+      <span data-qm-plan class="plan-badge"></span>
     </div>
 
-    <div class="nav-links">
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" data-nav-links>
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
       <a href="dashboard.html">Dashboard</a>
-    </div>
 
-    <div class="nav-cta">
-      <a class="btn btn-sm btn-ghost" href="login.html">Logowanie</a>
+      <div class="nav-links-sep"></div>
+
       <a class="btn btn-sm btn-primary" href="cennik.html">Wybierz plan</a>
     </div>
   </div>
 </div>
 
-<!-- HERO PREMIUM -->
-<section class="hero-premium">
-  <div class="hero-bg">
-    <img src="assets/img/hero.png" alt="Zarabianie u Szefa × QualitetMarket">
-    <div class="hero-overlay"></div>
+<div class="wrap">
+  <div class="grid-2">
+
+    <div class="hero-card reveal">
+      <span class="badge"><span class="dot"></span> Dostęp do panelu</span>
+      <div class="h1">Logowanie (demo)</div>
+      <div class="p">
+        Na tym etapie robimy wersję demonstracyjną.
+        Zaloguj się emailem (demo) i wejdź do dashboardu.
+      </div>
+
+      <div class="hr"></div>
+
+      <!-- ✅ LOGOWANIE (demo) -->
+      <form data-login-form>
+        <input class="input" type="email" name="email" placeholder="Twój email" required />
+        <div style="height:10px"></div>
+        <button class="btn btn-primary" type="submit">Zaloguj się</button>
+      </form>
+
+      <div class="hr"></div>
+
+      <div class="hero-cta">
+        <button class="btn btn-primary" type="button" onclick="activateProDemo()">Wejdź jako PRO</button>
+        <a class="btn" href="cennik.html">Zobacz plany</a>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="note">
+        Docelowo tu będzie: konto, hasło, reset, oraz weryfikacja płatności.
+      </div>
+    </div>
+
+    <div class="panel reveal d2">
+      <h3 style="margin:0 0 10px;">Dlaczego demo?</h3>
+
+      <div class="list">
+        <div class="item reveal d2">
+          <div class="icon">🧱</div>
+          <div>
+            <b>Najpierw stabilny front</b>
+            <div class="muted-xs">UI, flow, CTA, strony, blokady.</div>
+          </div>
+        </div>
+
+        <div class="item reveal d3">
+          <div class="icon">💳</div>
+          <div>
+            <b>Potem płatności</b>
+            <div class="muted-xs">Stripe / integracje — i dopiero realne role.</div>
+          </div>
+        </div>
+
+        <div class="item reveal d4">
+          <div class="icon">🔐</div>
+          <div>
+            <b>Potem backend</b>
+            <div class="muted-xs">Firebase / Supabase — realne konta i dane.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <button class="btn btn-danger" type="button" onclick="(window.QM && QM.logout) ? QM.logout() : (localStorage.clear(), location.href='index.html')">
+        Wyloguj / wyczyść dostęp
+      </button>
+    </div>
+
   </div>
-
-  <div class="hero-content">
-    <div class="hero-badge">ZARABIANIE U SZEFA × QUALITETMARKET</div>
-
-    <h1>Budujemy realny system sprzedaży.<br>Nie kolejny kurs.</h1>
-
-    <p>
-      Produkty. Panel sprzedaży. Gotowa struktura działania.
-      Startujesz bez magazynu i bez chaosu.
-    </p>
-
-    <div class="hero-buttons">
-      <a href="cennik.html" class="btn-primary">Wejdź do systemu</a>
-      <a href="qualitetmarket.html" class="btn-ghost">Zobacz produkty</a>
-    </div>
-
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <strong>20+</strong>
-        <span>Gotowych produktów</span>
-      </div>
-      <div class="hero-stat">
-        <strong>0 zł</strong>
-        <span>Magazyn na start</span>
-      </div>
-      <div class="hero-stat">
-        <strong>1 dzień</strong>
-        <span>Do uruchomienia MVP</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CONTENT -->
-<div class="wrap" style="padding-top:32px;">
-
-  <!-- VALUE -->
-  <div class="section">
-    <div class="section-title reveal">
-      <h2>Jak to działa</h2>
-      <p>Krótko: wybierasz, wdrażasz, sprzedajesz. Bez pierdolenia.</p>
-    </div>
-
-    <div class="grid-3">
-      <div class="card reveal d2">
-        <span class="badge"><span class="dot"></span> Krok 1</span>
-        <h3 style="margin-top:10px;">Wybierz plan</h3>
-        <p class="muted">BASIC / PRO / ELITE — PRO i ELITE mają dostęp do panelu sprzedaży Webkul.</p>
-      </div>
-
-      <div class="card reveal d3">
-        <span class="badge"><span class="dot"></span> Krok 2</span>
-        <h3 style="margin-top:10px;">Wejdź do QualitetMarket</h3>
-        <p class="muted">Masz produkty, gotowce, kierunek i plan działania. Wybierasz 1–3 rzeczy.</p>
-      </div>
-
-      <div class="card reveal d4">
-        <span class="badge"><span class="dot"></span> Krok 3</span>
-        <h3 style="margin-top:10px;">Odpal sprzedaż</h3>
-        <p class="muted">Pierwsze zamówienia → dopiero potem skalowanie. Najpierw dowóz, potem bajery.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- PRO BENEFITS + LEAD -->
-  <div class="section">
-    <div class="grid-2">
-
-      <div class="card reveal">
-        <span class="badge"><span class="dot"></span> Co dostajesz</span>
-        <h2 style="margin-top:10px;">PRO = realne narzędzia</h2>
-        <p class="muted">Dostęp do panelu + system + produkty. BASIC bez panelu sprzedaży.</p>
-        <div class="hr"></div>
-
-        <div class="list">
-          <div class="item reveal d2">
-            <div class="icon">⚡</div>
-            <div><b>System krok po kroku</b><div>Konkretny plan działań + priorytety.</div></div>
-          </div>
-          <div class="item reveal d3">
-            <div class="icon">🧩</div>
-            <div><b>QualitetMarket</b><div>Produkty + gotowce + struktura.</div></div>
-          </div>
-          <div class="item reveal d4">
-            <div class="icon">🔒</div>
-            <div><b>Panel Webkul (seller)</b><div>Tylko PRO/ELITE. BASIC bez panelu.</div></div>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="cennik.html">Wybierz plan</a>
-          <a class="btn" href="login.html">Zaloguj się</a>
-        </div>
-      </div>
-
-      <div class="card reveal d2">
-        <span class="badge"><span class="dot"></span> Lista startowa</span>
-        <h2 style="margin-top:10px;">Dołącz do platformy</h2>
-        <p class="muted">Zostaw email — dostaniesz dostęp jako pierwszy + bonus na start.</p>
-        <div class="hr"></div>
-
-        <form onsubmit="leadSubmit(event)">
-          <input id="leadEmail" class="input" type="email" placeholder="Twój email" required />
-          <div style="height:10px"></div>
-          <button class="btn btn-primary" type="submit">Dołącz</button>
-        </form>
-
-        <div style="height:12px"></div>
-        <div class="note">Podłączymy to pod Google Forms automatycznie.</div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- PRODUKTY -->
-  <section class="qm-products" id="produkty">
-    <div class="qm-head reveal">
-      <h2>Top produkty</h2>
-      <p class="muted">Wybierz 1–3 produkty i startuj. Bez magazynu, bez chaosu.</p>
-    </div>
-
-    <div class="qm-products-grid">
-
-      <article class="qm-product-card reveal d2">
-        <div class="qm-product-media">
-          <img src="assets/img/produkt_1.png" alt="Pakiet Hurtowy Start" loading="lazy" style="object-fit:cover;object-position:50% 18%;">
-        </div>
-        <div class="qm-product-body">
-          <h3>Pakiet Hurtowy Start</h3>
-          <p class="muted">Gotowe zestawy do odsprzedaży — wysoka rotacja i szybki start.</p>
-          <div class="qm-product-meta">
-            <span class="qm-chip">TOP</span>
-            <span class="qm-chip">HURT</span>
-            <span class="qm-chip">SZYBKO</span>
-          </div>
-          <a class="btn btn-sm btn-primary" href="qualitetmarket.html">Zobacz w QualitetMarket</a>
-        </div>
-      </article>
-
-      <article class="qm-product-card reveal d3">
-        <div class="qm-product-media">
-          <img src="assets/img/produkt_2.png" alt="Premium Krem Regeneracyjny" loading="lazy" style="object-fit:cover;object-position:50% 25%;">
-        </div>
-        <div class="qm-product-body">
-          <h3>Premium Krem Regeneracyjny</h3>
-          <p class="muted">Wysoka marża, produkt powtarzalny — łatwy do skalowania.</p>
-          <div class="qm-product-meta">
-            <span class="qm-chip">MARŻA</span>
-            <span class="qm-chip">BEAUTY</span>
-            <span class="qm-chip">HIT</span>
-          </div>
-          <a class="btn btn-sm btn-primary" href="qualitetmarket.html">Zobacz w QualitetMarket</a>
-        </div>
-      </article>
-
-      <article class="qm-product-card reveal d4">
-        <div class="qm-product-media">
-          <img src="assets/img/produkt_3.png" alt="Multitool Survival PRO" loading="lazy" style="object-fit:cover;object-position:50% 22%;">
-        </div>
-        <div class="qm-product-body">
-          <h3>Multitool Survival PRO</h3>
-          <p class="muted">Bestseller outdoor — wysoka konwersja, niski zwrot.</p>
-          <div class="qm-product-meta">
-            <span class="qm-chip">OUTDOOR</span>
-            <span class="qm-chip">PRO</span>
-            <span class="qm-chip">BEST</span>
-          </div>
-          <a class="btn btn-sm btn-primary" href="qualitetmarket.html">Zobacz w QualitetMarket</a>
-        </div>
-      </article>
-
-      <article class="qm-product-card reveal d4">
-        <div class="qm-product-media">
-          <img src="assets/img/produkt_4.png" alt="Opaska LED NightRun" loading="lazy" style="object-fit:cover;object-position:50% 25%;">
-        </div>
-        <div class="qm-product-body">
-          <h3>Opaska LED NightRun</h3>
-          <p class="muted">Trend fitness — idealny pod reklamy video i rolki.</p>
-          <div class="qm-product-meta">
-            <span class="qm-chip">FIT</span>
-            <span class="qm-chip">VIDEO</span>
-            <span class="qm-chip">TREND</span>
-          </div>
-          <a class="btn btn-sm btn-primary" href="qualitetmarket.html">Zobacz w QualitetMarket</a>
-        </div>
-      </article>
-
-      <article class="qm-product-card reveal d4">
-        <div class="qm-product-media">
-          <img src="assets/img/produkt_5.png" alt="Torba QualitetMarket PRO" loading="lazy" style="object-fit:cover;object-position:50% 20%;">
-        </div>
-        <div class="qm-product-body">
-          <h3>Torba QualitetMarket PRO</h3>
-          <p class="muted">Produkt premium — buduje markę i wizerunek sklepu.</p>
-          <div class="qm-product-meta">
-            <span class="qm-chip">BRAND</span>
-            <span class="qm-chip">PREMIUM</span>
-            <span class="qm-chip">PRO</span>
-          </div>
-          <a class="btn btn-sm btn-primary" href="qualitetmarket.html">Zobacz w QualitetMarket</a>
-        </div>
-      </article>
-
-    </div>
-  </section>
-
 </div>
 
-<!-- FOOTER -->
-<div class="footer">
-  © 2026 Zarabianie u Szefa • QualitetMarket
-</div>
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script>
-  function leadSubmit(e){
-    e.preventDefault();
-    const email = document.getElementById("leadEmail")?.value?.trim();
-    if(!email){ alert("Wpisz email"); return; }
-    alert("Zapisano! (demo) — podepniemy pod Google Forms.");
-    document.getElementById("leadEmail").value = "";
+  // Demo: ustawia PRO + loguje i przerzuca do dashboard
+  function activateProDemo(){
+    localStorage.setItem("qm_user", "demo@pro.local");
+    if (window.QM && typeof window.QM.setPlan === "function") {
+      window.QM.setPlan("PRO");
+    } else {
+      localStorage.setItem("qm_plan", "PRO");
+    }
+    window.location.href = "dashboard.html";
   }
+
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
 </script>
 
-<script src="assets/app.js"></script>
+<!-- assets/app.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
+
+<!-- auth.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/auth.js", () => tryLoad("auth.js"));
+  })();
+</script>
+
 </body>
 </html>
