@@ -463,3 +463,58 @@ button{ font-family:inherit; }
   .brand-title{ max-width: 40vw; }
   .btn{ padding: 11px 12px; }
 }
+/* ===== Login / Forms / Panels (patch) ===== */
+.input{
+  width:100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  font-size: 14px;
+}
+.input::placeholder{ color: rgba(234,240,255,.55); }
+.input:focus{ outline:none; border-color: rgba(110,231,255,.35); }
+
+.panel{
+  border-radius: 26px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  box-shadow: var(--shadow2);
+}
+@media (min-width: 720px){
+  .panel{ padding: 22px; }
+}
+
+.note{
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  color: rgba(234,240,255,.78);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.list{ display:grid; gap:10px; }
+.item{
+  display:flex;
+  gap: 12px;
+  align-items:flex-start;
+  padding: 12px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.14);
+}
+.icon{
+  width: 36px;
+  height: 36px;
+  border-radius: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  flex: 0 0 auto;
+}
