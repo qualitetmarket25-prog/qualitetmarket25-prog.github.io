@@ -1,116 +1,156 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QualitetMarket • Gotowce</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard – Zarabianie u Szefa</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- ładowanie planGuard z 2 ścieżek (u Ciebie bywa w /js albo w root) -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
 </head>
-<body>
 
-  <div class="nav">
-    <div class="nav-inner">
-      <a class="brand" href="index.html">
-        <span class="logo"></span>
-        <span>Zarabianie u Szefa</span>
-      </a>
+<body data-require="login">
 
-      <div class="nav-links">
-        <a href="dashboard.html">Panel</a>
-        <a href="blueprints.html" style="color:var(--text); background:rgba(255,255,255,.06);">Gotowce</a>
-        <a href="intelligence.html">Intelligence</a>
-      </div>
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="brand-title">Zarabianie u Szefa</div>
+      <span id="planBadge" class="plan-badge"></span>
+    </div>
 
-      <div class="nav-cta">
-        <button class="btn btn-sm btn-ghost" id="planBtn">Plan: <span id="planLabel">BASIC</span></button>
-        <button class="btn btn-sm btn-danger" id="logoutBtn">Wyloguj</button>
-      </div>
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" data-nav-links>
+      <a href="index.html">Start</a>
+      <a href="cennik.html">Plany</a>
+      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="blueprints.html">Blueprints</a>
+      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a class="active" href="dashboard.html">Dashboard</a>
+
+      <div class="nav-links-sep"></div>
+
+      <button class="btn btn-sm btn-danger nav-logout" onclick="logout()">Wyloguj</button>
     </div>
   </div>
+</div>
 
-  <div class="wrap">
-    <div class="section-title">
-      <div>
-        <span class="badge"><span class="dot"></span> Gotowe sklepy • Blueprinty</span>
-        <h2 style="margin:10px 0 6px;">Wybierz gotowca i startuj</h2>
-        <p>Gotowiec = nisza + 20 produktów + ceny z marżą + copy pack + paczka CSV do wdrożenia.</p>
+<div class="wrap">
+
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> Panel Sterowania</span>
+    <div class="h1">Dashboard</div>
+    <div class="p">Centrum kontroli Twojego systemu sprzedażowego.</div>
+
+    <div class="grid-3">
+      <div class="kpi reveal d2">
+        <div>
+          <strong>Plan</strong>
+          <div class="muted-xs">Aktywny dostęp</div>
+        </div>
+        <span id="currentPlan">BASIC</span>
       </div>
 
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input class="input" id="bpSearch" placeholder="Szukaj gotowca…" style="min-width:260px; max-width:320px;" />
-        <select class="input" id="bpLevel" style="min-width:220px; max-width:260px;">
-          <option value="">Wszystkie poziomy</option>
-          <option value="BASIC">BASIC</option>
-          <option value="PRO">PRO</option>
-          <option value="ELITE">ELITE</option>
-        </select>
+      <div class="kpi reveal d3">
+        <div>
+          <strong>Moduły</strong>
+          <div class="muted-xs">Dostępne funkcje</div>
+        </div>
+        <span id="moduleAccess">Ograniczone</span>
+      </div>
+
+      <div class="kpi reveal d4">
+        <div>
+          <strong>Status</strong>
+          <div class="muted-xs">System</div>
+        </div>
+        <span>Aktywny</span>
       </div>
     </div>
-
-    <div class="cards" id="blueprintsGrid"></div>
 
     <div class="hr"></div>
 
-    <div class="grid-2">
-      <div class="panel">
-        <h3>Wybrany gotowiec</h3>
-        <div class="note" id="bpInfo">Wybierz gotowca z listy.</div>
-
-        <div class="hr"></div>
-
-        <div class="grid-2">
-          <div class="kpi">
-            <div>
-              <strong id="bpAvgMargin">—</strong>
-              <span>Śr. marża</span>
-            </div>
-            <span class="badge ok" id="bpBadge">—</span>
-          </div>
-          <div class="kpi">
-            <div>
-              <strong id="bpAvgScore">—</strong>
-              <span>Śr. score</span>
-            </div>
-            <span class="badge" id="bpCount">—</span>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-primary" id="downloadPackBtn">Pobierz paczkę gotowca</button>
-          <button class="btn" id="downloadCsvBtn">Pobierz CSV</button>
-          <button class="btn btn-ghost" id="copyCopyPackBtn">Kopiuj Copy Pack</button>
-        </div>
-
-        <div class="note" style="margin-top:12px;">
-          <b>Paczkę</b> wklejasz do: Allegro / sklep / landing.  
-          Następny krok (ELITE): import do BaseLinker (CSV feed) — dołożymy później.
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Produkty w gotowcu</h3>
-        <div class="qm-table-wrap">
-          <table class="qm-table">
-            <thead>
-              <tr>
-                <th>Produkt</th>
-                <th class="right">Sugerowana</th>
-                <th class="right">Zysk</th>
-                <th class="right">Marża</th>
-                <th class="right">Score</th>
-              </tr>
-            </thead>
-            <tbody id="bpProductsTbody"></tbody>
-          </table>
-        </div>
-      </div>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="qualitetmarket.html">QualitetMarket</a>
+      <a class="btn" href="intelligence.html">Intelligence</a>
+      <a class="btn" href="blueprints.html">Blueprints</a>
+      <a class="btn btn-secondary" href="hurtownie.html" id="hurtownieBtn">System Hurtowni</a>
+      <a class="btn" href="cennik.html">Upgrade planu</a>
     </div>
-
-    <div class="footer">© QualitetMarket • Blueprint Engine</div>
   </div>
 
-  <script src="js/blueprints.js"></script>
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Twoje następne kroki</h2>
+      <p>Produkt → Marża → Dostawca → Ruch → Sprzedaż.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card reveal d2">
+        <h3>1) Intelligence</h3>
+        <p>Sprawdź scoring i marżę produktu.</p>
+      </div>
+
+      <div class="card reveal d3">
+        <h3>2) Hurtownie</h3>
+        <p>Wczytaj CSV dostawcy i oceń opłacalność.</p>
+      </div>
+
+      <div class="card reveal d4">
+        <h3>3) Blueprint</h3>
+        <p>Wdrażaj gotowe schematy sprzedażowe.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
+
+<script src="assets/app.js"></script>
+
+<script>
+  // mobilne menu (hamburger)
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>
+
 </body>
 </html>
