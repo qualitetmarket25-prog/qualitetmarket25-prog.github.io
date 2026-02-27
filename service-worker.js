@@ -1,89 +1,62 @@
-/* Qualitet PWA Service Worker (GitHub Pages friendly) */
-const CACHE = "qualitet-pwa-v1";
+const CACHE_NAME = "qualitet-cache-v3";
 
-const CORE = [
-  "/",               // start
-  "/index.html",
-  "/styles.css",
-  "/manifest.webmanifest",
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./styles.css",
 
-  "/dashboard.html",
-  "/cennik.html",
-  "/qualitetmarket.html",
-  "/intelligence.html",
-  "/blueprints.html",
-  "/hurtownie.html",
-  "/login.html",
-  "/aktywuj-pro.html",
+  // strony
+  "./cennik.html",
+  "./qualitetmarket.html",
+  "./intelligence.html",
+  "./blueprints.html",
+  "./hurtownie.html",
+  "./dashboard.html",
+  "./login.html",
+  "./aktywuj-pro.html",
 
-  // JS (zostawiamy oba warianty, bo u Ciebie bywa różnie)
-  "/assets/app.js",
-  "/app.js",
-  "/js/planGuard.js",
-  "/planGuard.js",
-  "/js/hurtownie.js",
-  "/hurtownie.js",
-  "/assets/auth.js",
-  "/auth.js",
+  // manifest + ikony
+  "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512-maskable.png",
 
-  // ikony
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-512-maskable.png"
+  // skrypty (root i fallback)
+  "./planGuard.js",
+  "./app.js",
+  "./auth.js",
+  "./intelligence.js",
+  "./blueprints.js"
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k === CACHE ? null : caches.delete(k))))
-    ).then(() => self.clients.claim())
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
   );
+  self.clients.claim();
 });
 
-/**
- * Strategia:
- * - HTML: network-first (zawsze świeże, ale offline też działa)
- * - reszta: cache-first (szybko na telefonie)
- */
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
+  // tylko GET
+  if (event.request.method !== "GET") return;
 
-  // tylko nasz origin
-  if (url.origin !== self.location.origin) return;
-
-  const isHTML =
-    req.mode === "navigate" ||
-    (req.headers.get("accept") || "").includes("text/html");
-
-  if (isHTML) {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy));
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match("/index.html")))
-    );
-    return;
-  }
-
-  // cache-first dla assetów
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.match(event.request).then((cached) => {
       if (cached) return cached;
-      return fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(req, copy));
-        return res;
-      });
+      return fetch(event.request).then((resp) => {
+        // cache dynamiczny dla plików statycznych
+        const copy = resp.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return resp;
+      }).catch(() => cached);
     })
   );
 });
