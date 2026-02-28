@@ -1,36 +1,34 @@
 /* planGuard.js — Qualitet / Zarabianie u Szefa
-   Sterowanie dostępem planów + lekkie “auth” pod demo (localStorage)
-
-   Plan:
-   - localStorage.status: BASIC | PRO | ELITE
-   Login (opcjonalnie):
-   - localStorage.is_logged_in: "true"
+   Dostęp: localStorage.status = BASIC | PRO | ELITE
+   Login:  localStorage.is_logged_in = "true"
+   Expiry: localStorage.plan_expires_at = ISO (opcjonalnie)
 */
 (function () {
   const PLAN_KEY = "status";
   const LOGIN_KEY = "is_logged_in";
+  const EXP_KEY = "plan_expires_at";
 
   const PLAN_ORDER = { BASIC: 0, PRO: 1, ELITE: 2 };
-
-  // Ustal bazę dla redirectów (działa też gdy otworzysz /folder/strona.html)
-  function basePath() {
-    const p = window.location.pathname;
-    // jeśli /something.html -> zwróć katalog
-    return p.slice(0, p.lastIndexOf("/") + 1);
-  }
-
-  function urlTo(page) {
-    // jeśli masz repo GitHub Pages, to i tak bazą jest / (zwykle /)
-    // ale gdy wejdzie z podkatalogu, to to trzyma spójność
-    return basePath() + page;
-  }
 
   function normPlan(p) {
     p = (p || "BASIC").toUpperCase();
     return (p === "PRO" || p === "ELITE") ? p : "BASIC";
   }
 
+  function isExpired() {
+    const exp = localStorage.getItem(EXP_KEY);
+    if (!exp) return false;
+    const t = Date.parse(exp);
+    if (!isFinite(t)) return false;
+    return Date.now() > t;
+  }
+
   function getPlan() {
+    // jeśli plan wygasł — cofamy na BASIC
+    if (isExpired()) {
+      localStorage.setItem(PLAN_KEY, "BASIC");
+      return "BASIC";
+    }
     return normPlan(localStorage.getItem(PLAN_KEY));
   }
 
@@ -43,22 +41,22 @@
     if (r === "elite") return "ELITE";
     if (r === "pro") return "PRO";
     if (r === "basic") return "BASIC";
-    return null; // brak wymagań
+    if (r === "login") return "LOGIN";
+    return null;
   }
 
   function hasAccess(plan, required) {
-    if (!required) return true;
+    if (!required || required === "LOGIN") return true;
     return PLAN_ORDER[plan] >= PLAN_ORDER[required];
   }
 
   function redirect(page) {
-    window.location.href = urlTo(page);
+    window.location.href = page;
   }
 
   function renderBadge(plan) {
-    // Obsługa obu wariantów: id="planBadge" lub data-pro-badge / data-qm-plan
-    const byId = document.getElementById("planBadge");
-    if (byId) byId.textContent = plan;
+    const el = document.getElementById("planBadge");
+    if (el) el.textContent = plan;
 
     const proBadge = document.querySelector("[data-pro-badge]");
     if (proBadge) proBadge.textContent = plan;
@@ -67,36 +65,24 @@
     if (qmPlan) qmPlan.textContent = plan;
   }
 
-  function toggleLinks(selectorList, show) {
-    selectorList.forEach(sel => {
+  function toggleLinks(selectors, show) {
+    selectors.forEach(sel => {
       document.querySelectorAll(sel).forEach(a => {
         a.style.display = show ? "" : "none";
-        a.setAttribute("aria-hidden", show ? "false" : "true");
       });
     });
   }
 
   function hideLinksByPlan(plan) {
-    // Hurtownie tylko PRO+
+    // PRO+
     toggleLinks(
-      ['a[href="hurtownie.html"]', 'a[href="/hurtownie.html"]'],
+      ['a[href="qualitetmarket.html"]','a[href="/qualitetmarket.html"]','a[href="hurtownie.html"]','a[href="/hurtownie.html"]'],
       PLAN_ORDER[plan] >= PLAN_ORDER.PRO
     );
 
-    // QualitetMarket tylko PRO+
+    // ELITE
     toggleLinks(
-      ['a[href="qualitetmarket.html"]', 'a[href="/qualitetmarket.html"]'],
-      PLAN_ORDER[plan] >= PLAN_ORDER.PRO
-    );
-
-    // Intelligence + Blueprints tylko ELITE (zostawiam tak jak masz)
-    toggleLinks(
-      ['a[href="intelligence.html"]', 'a[href="/intelligence.html"]'],
-      PLAN_ORDER[plan] >= PLAN_ORDER.ELITE
-    );
-
-    toggleLinks(
-      ['a[href="blueprints.html"]', 'a[href="/blueprints.html"]'],
+      ['a[href="intelligence.html"]','a[href="/intelligence.html"]','a[href="blueprints.html"]','a[href="/blueprints.html"]'],
       PLAN_ORDER[plan] >= PLAN_ORDER.ELITE
     );
   }
@@ -106,27 +92,26 @@
     renderBadge(plan);
     hideLinksByPlan(plan);
 
-    const requireAttr = document.body.getAttribute("data-require"); // basic|pro|elite|login
+    const requireAttr = document.body.getAttribute("data-require");
     if (!requireAttr) return;
 
-    const req = requireAttr.toLowerCase().trim();
+    const required = requiredLevel(requireAttr);
 
-    // Wymagane logowanie (opcjonalne)
-    if (req === "login") {
+    // każda strona wymagająca czegokolwiek -> musi być login
+    if (required && required !== null) {
       if (!isLoggedIn()) redirect("login.html");
-      return;
     }
 
-    // Wymagany plan
-    const required = requiredLevel(req);
-    if (!hasAccess(plan, required)) {
-      redirect("cennik.html");
-    }
+    // login-only (dashboard)
+    if (required === "LOGIN") return;
+
+    // plan gating
+    if (!hasAccess(plan, required)) redirect("cennik.html");
   }
 
   document.addEventListener("DOMContentLoaded", gatePage);
 
-  // Mini API pod debug/sterowanie (zostawiam)
+  // Debug API
   window.QualitetGuard = {
     getPlan,
     isLoggedIn,
