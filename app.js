@@ -1,90 +1,89 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Płatność zakończona</title>
+/* QualitetMarket / Zarabianie u Szefa - app.js (root)
+   - badge planu (BASIC/PRO/ELITE)
+   - prosty logout
+   - helpery dla planGuard
+*/
 
-  <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="/icons/icon-192.png">
+(function () {
+  const LS_PLAN_KEY = "status"; // BASIC/PRO/ELITE
+  const LS_PAID_AT = "paid_at";
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f14">
-</head>
-<body>
+  function getPlan() {
+    const p = (localStorage.getItem(LS_PLAN_KEY) || "BASIC").toUpperCase();
+    if (p !== "PRO" && p !== "ELITE" && p !== "BASIC") return "BASIC";
+    return p;
+  }
 
-<section class="section">
-  <div class="container">
-    <div class="card highlight" id="box">
-      <h2>⏳ Weryfikacja płatności...</h2>
-      <p style="margin-top:10px;color:#cbd5e1;">Proszę czekać.</p>
-    </div>
-  </div>
-</section>
+  function setPlan(plan) {
+    const p = (plan || "BASIC").toUpperCase();
+    localStorage.setItem(LS_PLAN_KEY, (p === "PRO" || p === "ELITE") ? p : "BASIC");
+    if (p === "PRO" || p === "ELITE") {
+      if (!localStorage.getItem(LS_PAID_AT)) localStorage.setItem(LS_PAID_AT, new Date().toISOString());
+    } else {
+      localStorage.removeItem(LS_PAID_AT);
+    }
+  }
 
-<script>
-function getParam(name){
-  const url = new URL(window.location.href);
-  return url.searchParams.get(name);
-}
+  function renderPlanBadges() {
+    const plan = getPlan();
 
-const plan = (getParam("plan") || "").toUpperCase();
-const token = getParam("token");
-const box = document.getElementById("box");
+    // 1) index.html ma #planBadge
+    const planBadge = document.getElementById("planBadge");
+    if (planBadge) {
+      planBadge.textContent = plan;
+      planBadge.classList.remove("is-basic", "is-pro", "is-elite");
+      planBadge.classList.add(plan === "ELITE" ? "is-elite" : plan === "PRO" ? "is-pro" : "is-basic");
+    }
 
-/* ====== TOKENY ====== */
-const VALID_TOKENS = {
-  PRO: "PRO2026SZEF",
-  ELITE: "ELITE2026SZEF"
-};
+    // 2) inne strony mogą mieć [data-pro-badge] lub [data-qm-plan]
+    document.querySelectorAll("[data-pro-badge],[data-qm-plan]").forEach((el) => {
+      el.textContent = plan;
+    });
 
-if (
-  (plan === "PRO" || plan === "ELITE") &&
-  token === VALID_TOKENS[plan]
-) {
+    // 3) opcjonalnie ukryj link Hurtownie dla BASIC (jeśli chcesz)
+    const hurtLink = document.getElementById("hurtownieLink");
+    if (hurtLink) {
+      hurtLink.style.opacity = (plan === "BASIC") ? "0.6" : "1";
+    }
+  }
 
-  localStorage.setItem("status", plan);
-  localStorage.setItem("paid_at", new Date().toISOString());
+  function attachLogout() {
+    // Jeśli masz przycisk/element z data-logout – zadziała automatycznie
+    const btns = document.querySelectorAll("[data-logout]");
+    if (!btns.length) return;
 
-  box.innerHTML = `
-    <h2>✅ Płatność zakończona</h2>
-    <p style="margin-top:10px;color:#cbd5e1;">
-      Aktywowano plan: <strong style="color:#fff;">${plan}</strong>
-    </p>
-    <p style="margin-top:10px;color:#94a3b8;">
-      Trwa przekierowanie...
-    </p>
-  `;
+    btns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        // nie kasujemy planu, tylko "logout" – jeśli kiedyś dodasz login
+        localStorage.removeItem("user_email");
+        localStorage.removeItem("is_logged_in");
+        location.href = "index.html";
+      });
+    });
+  }
 
-  setTimeout(() => {
-    window.location.href = "dashboard.html";
-  }, 2000);
+  // Debug: szybka zmiana planu przez URL (opcjonalne)
+  // np. /index.html?setplan=PRO
+  function devPlanFromUrl() {
+    const url = new URL(location.href);
+    const setplan = (url.searchParams.get("setplan") || "").toUpperCase();
+    if (setplan === "PRO" || setplan === "ELITE" || setplan === "BASIC") {
+      setPlan(setplan);
+      url.searchParams.delete("setplan");
+      history.replaceState({}, "", url.toString());
+    }
+  }
 
-} else {
-
-  box.innerHTML = `
-    <h2>❌ Weryfikacja nieudana</h2>
-    <p style="margin-top:10px;color:#cbd5e1;">
-      Link nieprawidłowy lub wygasły.
-    </p>
-    <div style="margin-top:20px;">
-      <a href="cennik.html" class="btn-primary">
-        Wróć do cennika
-      </a>
-    </div>
-  `;
-}
-</script>
-
-<!-- Service Worker -->
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js");
+  document.addEventListener("DOMContentLoaded", () => {
+    devPlanFromUrl();
+    renderPlanBadges();
+    attachLogout();
   });
-}
-</script>
 
-</body>
-</html>
+  // Udostępnij minimalne API dla innych skryptów (np. planGuard.js)
+  window.QualitetApp = {
+    getPlan,
+    setPlan,
+    renderPlanBadges
+  };
+})();
