@@ -1,12 +1,19 @@
 /* planGuard.js — Qualitet / Zarabianie u Szefa
-   Dostęp: localStorage.status = BASIC | PRO | ELITE
-   Login:  localStorage.is_logged_in = "true"
-   Expiry: localStorage.plan_expires_at = ISO (opcjonalnie)
+   Źródło prawdy: localStorage.status = BASIC | PRO | ELITE
+   Login:          localStorage.is_logged_in = "true"
+   Expiry:         localStorage.plan_expires_at = ISO (opcjonalnie)
+
+   HOTFIX:
+   - migruje stare klucze: plan, qm_plan -> status
+   - zapamiętuje ostatni PRO/ELITE i przywraca, jeśli coś zepchnie do BASIC
 */
 (function () {
   const PLAN_KEY = "status";
   const LOGIN_KEY = "is_logged_in";
   const EXP_KEY = "plan_expires_at";
+  const LAST_KEY = "last_paid_plan"; // trzymamy ostatni PRO/ELITE
+
+  const LEGACY_KEYS = ["plan", "qm_plan"]; // stare wersje
 
   const PLAN_ORDER = { BASIC: 0, PRO: 1, ELITE: 2 };
 
@@ -23,12 +30,47 @@
     return Date.now() > t;
   }
 
-  function getPlan() {
-    // jeśli plan wygasł — cofamy na BASIC
+  // 1) Migracja: jeśli status nie istnieje, a stare klucze mają PRO/ELITE -> kopiuj do status
+  function migrateLegacyPlan() {
+    const current = localStorage.getItem(PLAN_KEY);
+    if (current) return;
+
+    for (const k of LEGACY_KEYS) {
+      const v = normPlan(localStorage.getItem(k));
+      if (v === "PRO" || v === "ELITE") {
+        localStorage.setItem(PLAN_KEY, v);
+        localStorage.setItem(LAST_KEY, v);
+        return;
+      }
+    }
+    // jak nic nie ma, ustaw BASIC jako default
+    localStorage.setItem(PLAN_KEY, "BASIC");
+  }
+
+  // 2) Ochrona: jeśli ktoś zepchnął status do BASIC, a last_paid_plan było PRO/ELITE -> przywróć
+  function restoreIfDowngraded() {
     if (isExpired()) {
       localStorage.setItem(PLAN_KEY, "BASIC");
-      return "BASIC";
+      return;
     }
+    const plan = normPlan(localStorage.getItem(PLAN_KEY));
+    const last = normPlan(localStorage.getItem(LAST_KEY));
+
+    if (plan === "BASIC" && (last === "PRO" || last === "ELITE")) {
+      localStorage.setItem(PLAN_KEY, last);
+    }
+
+    // jeśli jest PRO/ELITE, zapisuj jako last
+    const now = normPlan(localStorage.getItem(PLAN_KEY));
+    if (now === "PRO" || now === "ELITE") localStorage.setItem(LAST_KEY, now);
+
+    // opcjonalnie: utrzymuj kompatybilność wstecz (żeby stare skrypty nie mieszały)
+    LEGACY_KEYS.forEach(k => localStorage.setItem(k, now));
+  }
+
+  function getPlan() {
+    migrateLegacyPlan();
+    restoreIfDowngraded();
     return normPlan(localStorage.getItem(PLAN_KEY));
   }
 
@@ -58,11 +100,12 @@
     const el = document.getElementById("planBadge");
     if (el) el.textContent = plan;
 
-    const proBadge = document.querySelector("[data-pro-badge]");
-    if (proBadge) proBadge.textContent = plan;
-
+    // kompatybilność: jeśli gdzieś masz inne znaczniki
     const qmPlan = document.querySelector("[data-qm-plan]");
     if (qmPlan) qmPlan.textContent = plan;
+
+    const proBadge = document.querySelector("[data-pro-badge]");
+    if (proBadge) proBadge.textContent = plan;
   }
 
   function toggleLinks(selectors, show) {
@@ -97,12 +140,10 @@
 
     const required = requiredLevel(requireAttr);
 
-    // każda strona wymagająca czegokolwiek -> musi być login
-    if (required && required !== null) {
-      if (!isLoggedIn()) redirect("login.html");
-    }
+    // jeśli strona ma wymagania (login/pro/elite) -> wymagaj login
+    if (required && !isLoggedIn()) redirect("login.html");
 
-    // login-only (dashboard)
+    // login-only
     if (required === "LOGIN") return;
 
     // plan gating
@@ -111,11 +152,10 @@
 
   document.addEventListener("DOMContentLoaded", gatePage);
 
-  // Debug API
   window.QualitetGuard = {
     getPlan,
     isLoggedIn,
     setLogin(flag) { localStorage.setItem(LOGIN_KEY, flag ? "true" : "false"); },
-    setPlan(p) { localStorage.setItem(PLAN_KEY, normPlan(p)); }
+    setPlan(p) { localStorage.setItem(PLAN_KEY, normPlan(p)); localStorage.setItem(LAST_KEY, normPlan(p)); }
   };
 })();
