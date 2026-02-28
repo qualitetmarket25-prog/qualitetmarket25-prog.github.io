@@ -39,14 +39,14 @@
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a href="blueprints.html">Blueprints</a>
+      <a href="intelligence.html" data-elite-link>Intelligence</a>
+      <a href="blueprints.html" data-elite-link>Blueprints</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a class="active" href="dashboard.html">Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <button class="btn btn-sm btn-danger nav-logout" onclick="logout()">Wyloguj</button>
+      <button class="btn btn-sm btn-danger nav-logout" type="button" onclick="logout()">Wyloguj</button>
     </div>
   </div>
 </div>
@@ -88,8 +88,8 @@
 
     <div class="hero-cta">
       <a class="btn btn-primary" href="qualitetmarket.html">QualitetMarket</a>
-      <a class="btn" href="intelligence.html">Intelligence</a>
-      <a class="btn" href="blueprints.html">Blueprints</a>
+      <a class="btn" href="intelligence.html" data-elite-btn>Intelligence</a>
+      <a class="btn" href="blueprints.html" data-elite-btn>Blueprints</a>
       <a class="btn btn-secondary" href="hurtownie.html" id="hurtownieBtn">System Hurtowni</a>
       <a class="btn" href="cennik.html">Upgrade planu</a>
     </div>
@@ -123,9 +123,39 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<script src="assets/app.js"></script>
+<!-- U Ciebie app.js jest w ROOT repo (na screenie), więc ładujemy z root -->
+<script src="app.js"></script>
 
 <script>
+  // logout (demo)
+  function logout() {
+    localStorage.setItem("is_logged_in", "false");
+    // opcjonalnie: nie kasuję planu, tylko sesję
+    window.location.href = "login.html";
+  }
+
+  // Ustaw KPI + lekkie UX (ukryj ELITE rzeczy jeśli nie ELITE)
+  (function () {
+    const plan = (localStorage.getItem("status") || "BASIC").toUpperCase();
+    const safePlan = (plan === "PRO" || plan === "ELITE") ? plan : "BASIC";
+
+    const currentPlanEl = document.getElementById("currentPlan");
+    if (currentPlanEl) currentPlanEl.textContent = safePlan;
+
+    const moduleEl = document.getElementById("moduleAccess");
+    if (moduleEl) {
+      if (safePlan === "ELITE") moduleEl.textContent = "Pełne (ELITE)";
+      else if (safePlan === "PRO") moduleEl.textContent = "Rozszerzone (PRO)";
+      else moduleEl.textContent = "Ograniczone (BASIC)";
+    }
+
+    // Jeśli nie ELITE, chowamy linki/przyciski ELITE w dashboardzie (planGuard też je schowa w nav,
+    // ale tu dodatkowo chowamy CTA i linki)
+    if (safePlan !== "ELITE") {
+      document.querySelectorAll("[data-elite-btn], [data-elite-link]").forEach(el => el.style.display = "none");
+    }
+  })();
+
   // mobilne menu (hamburger)
   (function () {
     const root = document.querySelector("[data-nav-root]");
