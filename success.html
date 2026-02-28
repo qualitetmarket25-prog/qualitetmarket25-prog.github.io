@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0b0f14" />
 </head>
-<body>
 
+<body>
 <section class="section">
   <div class="container">
     <div class="card highlight" id="box">
@@ -37,19 +37,36 @@
   }
 
   function normalizePlan(raw){
-    const p = (raw || "").trim().toLowerCase();
+    const p = String(raw || "").trim().toLowerCase();
     if (p === "pro" || p === "premium") return "pro";
     if (p === "elite") return "elite";
-    // akceptuj też PRO/ELITE
-    if (p === "pro".toUpperCase().toLowerCase()) return "pro";
-    if (p === "elite".toUpperCase().toLowerCase()) return "elite";
     return "";
   }
 
+  function setPlanEverywhere(planLower){
+    // SOURCE OF TRUTH
+    localStorage.setItem("qm_plan", planLower);
+
+    // compat: guard v3 uses qm_plan_v1 as JSON string
+    localStorage.setItem("qm_plan_v1", JSON.stringify(planLower));
+
+    // legacy compat (uppercase)
+    localStorage.setItem("status", planLower.toUpperCase());
+    localStorage.setItem("plan", planLower.toUpperCase());
+    localStorage.setItem("last_paid_plan", planLower.toUpperCase());
+
+    // legacy pro flag
+    if (planLower === "pro" || planLower === "elite") {
+      localStorage.setItem("proStatus", "true");
+    } else {
+      localStorage.removeItem("proStatus");
+    }
+  }
+
   // -------- inputs --------
-  const planParam = getParam("plan");                 // pro|PRO|elite|ELITE
-  const token = getParam("token");                    // demo token
-  const demo = (getParam("demo") === "1");            // pozwala testować bez tokena
+  const planParam = getParam("plan");     // pro|PRO|elite|ELITE (zaakceptujemy przez normalize)
+  const token = getParam("token");        // demo token
+  const demo = (getParam("demo") === "1");// test bez tokena
   const box = document.getElementById("box");
 
   const plan = normalizePlan(planParam);
@@ -73,27 +90,21 @@
         Ta strona działa jako zakończenie płatności i wymaga linku z parametrami.
       </p>
       <p style="margin-top:10px;color:#94a3b8;">
-        Przykład testowy: <code>?plan=pro&token=PRO2026SZEF</code>
+        Test: <code>success.html?plan=pro&token=PRO2026SZEF</code>
       </p>
       <div style="margin-top:20px;">
         <a href="cennik.html" class="btn btn-primary">Wróć do cennika</a>
       </div>
     `;
   } else if (ok) {
-    // ✅ ŹRÓDŁO PRAWDY (SPÓJNE KLUCZE)
-    // - qm_plan: "guest" | "basic" | "pro" | "elite"
-    // - proStatus (legacy): true dla pro/elite
-    localStorage.setItem("qm_plan", plan);
-    localStorage.setItem("proStatus", "true");
+    // ✅ zapis planu spójnie (małe litery)
+    setPlanEverywhere(plan);
 
-    // kompatybilność wstecz (jeśli gdzieś stary kod czyta inne klucze)
-    localStorage.setItem("plan", plan.toUpperCase());                 // stary format
-    localStorage.setItem("status", plan.toUpperCase());
-    localStorage.setItem("last_paid_plan", plan.toUpperCase());
+    // auth / meta
     localStorage.setItem("is_logged_in", "true");
     localStorage.setItem("paid_at", new Date().toISOString());
 
-    // demo: ważność planu 30 dni
+    // ważność planu 30 dni
     localStorage.setItem("plan_expires_at", addDaysISO(30));
 
     box.innerHTML = `
