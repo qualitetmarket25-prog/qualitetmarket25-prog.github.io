@@ -2,135 +2,42 @@
 <html lang="pl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Zarabianie u Szefa — Start</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111111" />
+  <title>QualitetMarket</title>
 
-  <link rel="stylesheet" href="./styles.css?v=20260228" />
-  <link rel="icon" href="./favicon.ico" />
-
-  <!-- PWA -->
-  <link rel="manifest" href="./manifest.json?v=20260228" />
-  <meta name="theme-color" content="#0b0f14" />
-
-  <!-- planGuard: najpierw /js, potem root -->
-  <script>
-    (function () {
-      const V = "20260228";
-      const load = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src + (src.includes("?") ? "&" : "?") + "v=" + V;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      load("./js/planGuard.js", () => load("./planGuard.js"));
-    })();
-  </script>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
-
 <body>
-  <header class="topbar">
-    <nav class="nav">
-      <a class="nav__item" href="./index.html">Start</a>
-      <a class="nav__item" href="./cennik.html">Plany</a>
-      <a class="nav__item" href="./qualitetmarket.html">QualitetMarket</a>
-      <a class="nav__item" href="./intelligence.html">Intelligence</a>
-      <a class="nav__item" href="./blueprints.html">Blueprints</a>
-      <a class="nav__item" href="./hurtownie.html">Hurtownie</a>
-      <a class="nav__item" href="./dashboard.html">Dashboard</a>
-      <a class="nav__item nav__right" href="./login.html">Zaloguj</a>
-      <a class="nav__item nav__cta" href="./aktywuj-pro.html">Aktywuj PRO</a>
-    </nav>
+  <header>
+    <strong>QualitetMarket</strong>
+    <span id="qmPlanBadge" class="badge"></span>
   </header>
 
   <main class="container">
-    <section class="hero card">
-      <div class="row" style="align-items:center; gap:12px;">
-        <span class="badge">Platforma w budowie (demo)</span>
-        <span class="spacer"></span>
-        <span class="badge" id="planBadge">PLAN: …</span>
-      </div>
-
-      <h1 class="hero__title">Zarabianie u Szefa</h1>
-      <p class="muted">
-        System do wyboru produktów, liczenia marży i wdrażania gotowych schematów sprzedaży — wszystko w wersji mobile-first.
-      </p>
-
-      <div class="row" style="margin-top:14px;">
-        <button class="btn" id="goPlans">Zobacz plany</button>
-        <button class="btn secondary" id="goQM">Wejdź do QualitetMarket</button>
-        <button class="btn secondary" id="goIntel">Sprawdź Intelligence</button>
-        <button class="btn secondary" id="goDash">Przejdź do Dashboard</button>
-      </div>
-    </section>
-
-    <section style="margin-top:18px;">
-      <h2>Co tu robisz w 3 krokach</h2>
-
-      <div class="grid3">
-        <div class="card">
-          <h3>1) Intelligence</h3>
-          <p class="muted">Scoring produktu + szybka ocena opłacalności.</p>
-        </div>
-        <div class="card">
-          <h3>2) Hurtownie</h3>
-          <p class="muted">Dostawcy i CSV — selekcja ofert, które mają sens.</p>
-        </div>
-        <div class="card">
-          <h3>3) Blueprints</h3>
-          <p class="muted">Gotowe schematy sprzedaży, które wdrażasz od ręki.</p>
-        </div>
-      </div>
-    </section>
-
-    <footer class="footer muted" style="margin-top:22px;">
-      © 2026 Zarabianie u Szefa × QualitetMarket
-    </footer>
+    <h1>Demo SaaS</h1>
+    <nav class="nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/hurtownie.html">Hurtownie</a>
+      <a href="/qualitetmarket.html">QualitetMarket</a>
+      <a href="/intelligence.html">Intelligence</a>
+      <a href="/cennik.html">Cennik</a>
+      <a href="/aktywuj-pro.html">Aktywuj</a>
+    </nav>
   </main>
 
-  <!-- app.js: najpierw root, potem assets (bo masz różne strony z innym loaderem) -->
-  <script>
-    (function () {
-      const V = "20260228";
-      const load = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src + (src.includes("?") ? "&" : "?") + "v=" + V;
-        s.onerror = () => next && next();
-        document.body.appendChild(s);
-      };
-      load("./app.js", () => load("./assets/app.js"));
-    })();
-  </script>
+  <script defer src="/js/planGuard.js"></script>
+  <script defer src="/app.js"></script>
 
   <script>
-    // Minimalny init niezależny od app.js (żeby UI działało zawsze)
-    (function () {
-      const nav = (p) => (location.href = p);
-
-      document.getElementById("goPlans")?.addEventListener("click", () => nav("./cennik.html"));
-      document.getElementById("goQM")?.addEventListener("click", () => nav("./qualitetmarket.html"));
-      document.getElementById("goIntel")?.addEventListener("click", () => nav("./intelligence.html"));
-      document.getElementById("goDash")?.addEventListener("click", () => nav("./dashboard.html"));
-
-      // badge planu: najpierw z QM (app.js), jak nie ma to z localStorage
-      const badge = document.getElementById("planBadge");
-      const paint = () => {
-        try {
-          let p = "basic";
-          if (window.QM && typeof QM.getPlan === "function") p = QM.getPlan();
-          else {
-            const raw = localStorage.getItem("qm_plan") || localStorage.getItem("status") || "basic";
-            p = String(raw).toLowerCase();
-          }
-          if (badge) badge.textContent = "PLAN: " + String(p).toUpperCase();
-        } catch {}
-      };
-
-      paint();
-      setTimeout(paint, 400);
-      setTimeout(paint, 1200);
-    })();
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(()=>{});
+      });
+    }
   </script>
 </body>
 </html>
