@@ -77,6 +77,9 @@
       <p>Uzupełnij pola i kliknij “Policz”.</p>
     </div>
 
+    <!-- ✅ toast (prefill info) -->
+    <div id="qmIntelToast" class="note" style="display:none;margin-bottom:12px;"></div>
+
     <div class="grid-2">
       <div class="card reveal d2">
         <h3 style="margin:0 0 10px;">Dane produktu</h3>
@@ -284,6 +287,54 @@
       if (el) el.textContent = "—";
     });
   }
+
+  // ✅ PREFILL z QualitetMarket → Intelligence
+  (function prefillFromQualitetMarket(){
+    const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
+    const toast = document.getElementById("qmIntelToast");
+
+    function show(msg){
+      if (!toast) return;
+      toast.style.display = "";
+      toast.textContent = msg;
+      setTimeout(()=> toast.style.display="none", 2800);
+    }
+
+    let payload = null;
+    try {
+      const raw = localStorage.getItem(LS_INTEL_PREFILL);
+      payload = raw ? JSON.parse(raw) : null;
+    } catch { payload = null; }
+
+    if (!payload || !payload.name) return;
+
+    // wypełnij pola
+    const pName = document.getElementById("pName");
+    const buy   = document.getElementById("buy");
+    const sell  = document.getElementById("sell");
+    const ship  = document.getElementById("ship");
+    const fee   = document.getElementById("fee");
+    const ads   = document.getElementById("ads");
+    const risk  = document.getElementById("risk");
+
+    if (pName) pName.value = String(payload.name || "");
+    if (buy && Number.isFinite(Number(payload.wholesale))) buy.value = Number(payload.wholesale).toFixed(2);
+    if (sell && Number.isFinite(Number(payload.retail))) sell.value = Number(payload.retail).toFixed(2);
+
+    // jeśli koszty puste — ustaw 0 (żeby calc od razu działał sensownie)
+    const ensure0 = (el) => { if (el && (el.value === "" || el.value == null)) el.value = "0"; };
+    ensure0(ship); ensure0(fee); ensure0(ads); ensure0(risk);
+
+    // policz
+    try { calc(); } catch {}
+
+    // info
+    const sup = payload.supplierName ? ` • Hurtownia: ${payload.supplierName}` : "";
+    show(`Zaciągnięto produkt z QualitetMarket${sup}.`);
+
+    // wyczyść, żeby nie prefillowało w kółko
+    localStorage.removeItem(LS_INTEL_PREFILL);
+  })();
 
   // mobilne menu (hamburger)
   (function () {
