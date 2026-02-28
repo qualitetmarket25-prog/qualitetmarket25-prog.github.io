@@ -4,21 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QualitetMarket – Global TOP</title>
-  <link rel="stylesheet" href="styles.css">
 
-  <!-- planGuard fallback -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- ✅ GitHub Pages: zawsze ./ -->
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- ✅ core + guard -->
+  <script defer src="./app.js"></script>
+  <script defer src="./js/planGuard.js"></script>
 </head>
 
 <body data-require="pro">
@@ -36,19 +28,19 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a class="active" href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a href="listing.html">Listing</a>
-      <a href="blueprints.html">Blueprints</a>
-      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="dashboard.html" data-auth-only>Dashboard</a>
+      <a href="./index.html">Start</a>
+      <a href="./cennik.html">Plany</a>
+      <a class="active" href="./qualitetmarket.html">QualitetMarket</a>
+      <a href="./intelligence.html">Intelligence</a>
+      <a href="./listing.html">Listing</a>
+      <a href="./blueprints.html">Blueprints</a>
+      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="./dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -59,16 +51,16 @@
   <div class="hero-card reveal">
     <span class="badge"><span class="dot"></span> QualitetMarket • Global TOP</span>
     <div class="h1">Global TOP</div>
-    <div class="p">Ranking produktów z hurtowni (zapisanych w localStorage) + 1 klik do Intelligence / Listing.</div>
+    <div class="p">Ranking produktów z hurtowni (localStorage) + 1 klik do Intelligence / Listing.</div>
 
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="hurtownie.html">Dodaj hurtownię (CSV)</a>
-      <a class="btn" href="intelligence.html">Intelligence</a>
-      <a class="btn" href="listing.html">Listing</a>
-      <a class="btn" href="cennik.html">Plany</a>
-      <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
+      <a class="btn btn-secondary" href="./hurtownie.html">Dodaj hurtownię (CSV)</a>
+      <a class="btn" href="./intelligence.html">Intelligence</a>
+      <a class="btn" href="./listing.html">Listing</a>
+      <a class="btn" href="./cennik.html">Plany</a>
+      <a class="btn" href="./dashboard.html" data-auth-only>Dashboard</a>
     </div>
   </div>
 
@@ -111,7 +103,7 @@
       </div>
 
       <div class="muted-xs" style="margin-top:10px;">
-        Tip: Jak masz 50k produktów, i tak renderuję max 500 na raz (żeby nie zabić przeglądarki).
+        Tip: Jak masz 50k produktów, renderuję max 500 (żeby nie zabić przeglądarki).
       </div>
     </div>
   </div>
@@ -122,7 +114,7 @@
 <script>
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "login.html";
+    window.location.href = "./login.html";
   }
 
   (function () {
@@ -174,13 +166,18 @@
     return x.toFixed(2) + " zł";
   }
 
+  // ✅ canonical plan: qm_plan_v1 ("basic"|"pro"|"elite"), compat: status ("BASIC"|"PRO"|"ELITE")
   function getPlan(){
-    const p =
-      localStorage.getItem("plan") ||
-      localStorage.getItem("qm_plan") ||
-      localStorage.getItem("zsz_plan") ||
-      "";
-    return (p || "").toLowerCase();
+    const raw = localStorage.getItem("qm_plan_v1");
+    let p = "";
+    try { p = JSON.parse(raw); } catch { p = raw || ""; }
+    p = String(p || "").toLowerCase();
+    if (p === "basic" || p === "pro" || p === "elite") return p;
+
+    const legacy = String(localStorage.getItem("status") || "").toUpperCase();
+    if (legacy === "ELITE") return "elite";
+    if (legacy === "PRO") return "pro";
+    return "basic";
   }
 
   function isElite(){
@@ -245,11 +242,11 @@
       score: row.score,
       marginPct: row.marginPct
     }));
-    window.location.href = "intelligence.html";
+    window.location.href = "./intelligence.html";
   }
 
   function goListing(row){
-    // Listing generator najlepiej odpalać z ELITE
+    // ✅ twarda logika: listing 1-klik tylko ELITE
     if (!isElite()) {
       showToast("Listing 1-klik wymaga planu ELITE (upgrade w Cennik).", "error");
       return;
@@ -266,7 +263,7 @@
       features: "",
       notes: row.supplierName ? ("Hurtownia: " + row.supplierName) : ""
     }));
-    window.location.href = "listing.html";
+    window.location.href = "./listing.html";
   }
 
   function renderTable(rows){
@@ -274,8 +271,6 @@
     if (!tbody) return;
 
     tbody.innerHTML = "";
-
-    const elite = isElite();
 
     rows.slice(0, MAX_RENDER).forEach((r, idx)=>{
       const tr = document.createElement("tr");
@@ -294,10 +289,12 @@
             data-idx="${idx}">
             Wyślij do Intelligence
           </button>
+
+          <!-- ✅ UX lock: planGuard sam zrobi disabled dla nie-ELITE -->
           <button class="btn btn-sm btn-secondary"
             data-action="listing"
-            data-idx="${idx}"
-            ${elite ? "" : "disabled title='Wymaga planu ELITE'"}>
+            data-require-btn="elite"
+            data-idx="${idx}">
             Zrób Listing
           </button>
         </td>
@@ -314,15 +311,8 @@
       const row = rows[idx];
       if (!row) return;
 
-      if (action === "intel") {
-        goIntel(row);
-        return;
-      }
-
-      if (action === "listing") {
-        goListing(row);
-        return;
-      }
+      if (action === "intel") return goIntel(row);
+      if (action === "listing") return goListing(row);
     };
   }
 
@@ -336,25 +326,21 @@
     const sup = String($("#qmSupplierFilter")?.value || "").trim();
 
     let filtered = all;
-
     if (sup) filtered = filtered.filter(x => String(x.supplierName) === sup);
     if (q) filtered = filtered.filter(x => String(x.name||"").toLowerCase().includes(q));
 
     $("#qmMeta").textContent = `W bazie: ${all.length} • Widoczne: ${filtered.length} • Render: ${Math.min(filtered.length, MAX_RENDER)}`;
 
-    if (!suppliers.length) {
-      showToast("Brak danych z hurtowni. Wejdź w Hurtownie i zaimportuj CSV.", "error");
-    } else {
-      showToast("Global TOP załadowany.", "success");
-    }
+    if (!suppliers.length) showToast("Brak danych z hurtowni. Wejdź w Hurtownie i zaimportuj CSV.", "error");
+    else showToast("Global TOP załadowany.", "success");
 
     renderTable(filtered);
   }
 
   function bind(){
     $("#qmReload")?.addEventListener("click", applyFiltersAndRender);
-    $("#qmSearch")?.addEventListener("input", () => applyFiltersAndRender());
-    $("#qmSupplierFilter")?.addEventListener("change", () => applyFiltersAndRender());
+    $("#qmSearch")?.addEventListener("input", applyFiltersAndRender);
+    $("#qmSupplierFilter")?.addEventListener("change", applyFiltersAndRender);
 
     $("#qmClearGlobal")?.addEventListener("click", () => {
       localStorage.removeItem(LS_PRODUCTS_BY_SUPPLIER);
