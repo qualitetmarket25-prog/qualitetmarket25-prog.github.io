@@ -1,46 +1,169 @@
-// limits.js — QualitetMarket
-// Limity demo (BASIC = 1 import), działa tylko na hurtownie.html
-(function () {
-  const PLAN_KEY = "status"; // BASIC | PRO | ELITE
-  const plan = (localStorage.getItem(PLAN_KEY) || "BASIC").toUpperCase();
-  const safePlan = (plan === "PRO" || plan === "ELITE") ? plan : "BASIC";
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Blueprints – Zarabianie u Szefa</title>
+  <link rel="stylesheet" href="styles.css">
 
-  function onHurtownie() {
-    return window.location.pathname.includes("hurtownie.html");
-  }
+  <!-- planGuard fallback: /js/ oraz root -->
+  <script>
+    (function () {
+      const tryLoad = (src, next) => {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.src = src;
+        s.onerror = () => next && next();
+        document.head.appendChild(s);
+      };
+      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
+    })();
+  </script>
+</head>
 
-  function guardImports() {
-    if (!onHurtownie()) return;
+<body data-require="elite">
 
-    let importCount = parseInt(localStorage.getItem("importCount") || "0", 10);
+<div class="nav" data-nav-root>
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="brand-title">QualitetMarket</div>
+      <span id="planBadge" class="plan-badge"></span>
+    </div>
 
-    // Jeśli BASIC i już zużył 1 import – wywal na cennik
-    if (safePlan === "BASIC" && importCount >= 1) {
-      alert("Limit importów w planie BASIC został wykorzystany. Upgrade do PRO.");
-      window.location.href = "cennik.html";
-      return;
-    }
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
 
-    // Nadpisz processCSV dopiero jak istnieje (hurtownie.js musi się załadować)
-    const originalProcess = window.processCSV;
-    if (typeof originalProcess !== "function") return;
+    <div class="nav-links" data-nav-links>
+      <a href="index.html">Start</a>
+      <a href="cennik.html">Plany</a>
+      <a href="qualitetmarket.html">QualitetMarket</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a class="active" href="blueprints.html">Blueprints</a>
+      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="dashboard.html" data-auth-only>Dashboard</a>
 
-    window.processCSV = function () {
-      if (safePlan === "BASIC" && importCount >= 1) {
-        alert("Upgrade do PRO aby analizować kolejne hurtownie.");
-        window.location.href = "cennik.html";
-        return;
-      }
+      <div class="nav-links-sep"></div>
 
-      originalProcess();
+      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
+    </div>
+  </div>
+</div>
 
-      importCount++;
-      localStorage.setItem("importCount", String(importCount));
+<div class="wrap">
+
+  <div class="hero-card reveal">
+    <span class="badge"><span class="dot"></span> QualitetMarket • Wdrożenie</span>
+    <div class="h1">Blueprints</div>
+    <div class="p">Gotowe schematy wdrożenia sprzedaży. ELITE ma dostęp do pełnego pakietu.</div>
+
+    <div class="hr"></div>
+
+    <div class="hero-cta">
+      <a class="btn btn-secondary" href="intelligence.html">Intelligence</a>
+      <a class="btn" href="hurtownie.html">Hurtownie</a>
+      <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
+      <a class="btn" href="cennik.html">Upgrade planu</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>Pakiety Blueprintów</h2>
+      <p>Wybierz jeden i wdrażaj krok po kroku (bez backendu — czyste SOP).</p>
+    </div>
+
+    <div class="cards">
+      <div class="card reveal d2">
+        <h3>1) Szybki Start (24h)</h3>
+        <p>Jeden produkt, jeden kanał, jeden listing. Cel: pierwsza sprzedaż.</p>
+        <div class="hr"></div>
+        <div class="muted-xs">• wybór produktu (Intelligence)</div>
+        <div class="muted-xs">• dostawca (Hurtownie)</div>
+        <div class="muted-xs">• oferta + zdjęcia</div>
+        <div class="muted-xs">• publikacja + ruch</div>
+      </div>
+
+      <div class="card reveal d3">
+        <h3>2) Marża PRO</h3>
+        <p>Podkręcenie zysku: koszty, ceny, pakiety, upsell.</p>
+        <div class="hr"></div>
+        <div class="muted-xs">• wycena + BEP</div>
+        <div class="muted-xs">• polityka zwrotów</div>
+        <div class="muted-xs">• bundle/upsell</div>
+        <div class="muted-xs">• automatyzacje</div>
+      </div>
+
+      <div class="card reveal d4">
+        <h3>3) Ruch (Zero budżetu)</h3>
+        <p>Organiczny ruch: shorty, OLX/Allegro, grupy, copy.</p>
+        <div class="hr"></div>
+        <div class="muted-xs">• 10 tytułów</div>
+        <div class="muted-xs">• 3 opisy</div>
+        <div class="muted-xs">• 5 shortów</div>
+        <div class="muted-xs">• 30-dniowy rytm</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
+
+<!-- app.js fallback: assets/ oraz root -->
+<script>
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
     };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
+
+<script>
+  function logout() {
+    localStorage.setItem("is_logged_in", "false");
+    window.location.href = "login.html";
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    // czekamy chwilę aż hurtownie.js podstawi processCSV
-    setTimeout(guardImports, 300);
-  });
-})();
+  (function () {
+    const logged = localStorage.getItem("is_logged_in") === "true";
+    document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
+    document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
+  })();
+
+  // mobilne menu
+  (function () {
+    const root = document.querySelector("[data-nav-root]");
+    const btn = document.querySelector("[data-nav-toggle]");
+    const links = document.querySelector("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>
+
+</body>
+</html>
