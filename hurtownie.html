@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hurtownie – Zarabianie u Szefa</title>
 
-  <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="icons/icon-192.png" />
 
   <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f14">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b0f14" />
 
   <!-- planGuard fallback: /js/ oraz root -->
   <script>
@@ -100,6 +100,9 @@
       <p>Wczytaj plik CSV i uruchom analizę. Wyniki pojawią się niżej.</p>
     </div>
 
+    <!-- PROD: komunikaty / toast / status -->
+    <div id="qmToast" class="note" style="display:none;margin-bottom:12px;"></div>
+
     <div class="grid-2">
       <div class="card reveal d2">
         <h3 style="margin:0 0 10px;">Plik CSV</h3>
@@ -108,7 +111,11 @@
 
         <input class="input" type="file" id="csvFile" accept=".csv">
         <div style="height:10px"></div>
-        <button class="btn btn-primary" type="button" onclick="processCSV()">Analizuj hurtownię</button>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" type="button" id="qmAnalyzeBtn">Analizuj hurtownię</button>
+          <button class="btn btn-secondary" type="button" id="qmClearTableBtn">Wyczyść wyniki</button>
+        </div>
 
         <div class="hr"></div>
         <div id="supplierSummary" class="muted"></div>
@@ -132,6 +139,12 @@
     </div>
 
     <div class="card reveal d2">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+        <input class="input" id="qmSearch" type="text" placeholder="Szukaj produktu…" style="max-width:360px;">
+        <button class="btn btn-sm" type="button" id="qmExportProductsCsv">Eksport CSV</button>
+        <button class="btn btn-sm btn-secondary" type="button" id="qmExportProductsJson">Eksport JSON</button>
+      </div>
+
       <div class="table-wrap">
         <table class="table" id="resultsTable">
           <thead>
@@ -145,6 +158,10 @@
           </thead>
           <tbody></tbody>
         </table>
+      </div>
+
+      <div class="note" style="margin-top:10px;">
+        Top produkty są podświetlone. Uwaga: scoring jest “pro-sprzedażowy” — premiuje wysoką marżę i sensowny spread.
       </div>
     </div>
   </div>
