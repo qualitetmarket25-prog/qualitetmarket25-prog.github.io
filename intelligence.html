@@ -77,7 +77,7 @@
       <p>Uzupełnij pola i kliknij “Policz”.</p>
     </div>
 
-    <!-- ✅ toast (prefill info) -->
+    <!-- ✅ toast (prefill / status) -->
     <div id="qmIntelToast" class="note" style="display:none;margin-bottom:12px;"></div>
 
     <div class="grid-2">
@@ -128,14 +128,17 @@
 
         <div class="hr"></div>
 
-        <div class="hero-cta" style="margin:0;">
+        <div class="hero-cta" style="margin:0;flex-wrap:wrap;">
           <button class="btn btn-primary" type="button" onclick="calc()">Policz</button>
           <button class="btn" type="button" onclick="resetCalc()">Wyczyść</button>
+          <button class="btn btn-secondary" type="button" id="qmCopyResultBtn">Kopiuj wynik</button>
+          <button class="btn" type="button" id="qmTargetPriceBtn">Ustaw cenę pod target</button>
         </div>
 
         <div class="hr"></div>
+
         <div class="note">
-          Tip: zacznij od 1 produktu i dowieź go do sprzedaży. Dopiero potem skaluj listę.
+          <strong>Skrót:</strong> Ctrl+Shift+K ustawiasz prywatne koszty (ship/fee/ads/risk) raz i masz je zawsze.
         </div>
       </div>
 
@@ -189,6 +192,13 @@
         <div class="hr"></div>
 
         <div class="card soft">
+          <h3 style="margin:0 0 6px;">Szybki audyt (auto)</h3>
+          <div class="muted-xs" id="qmAudit">—</div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="card soft">
           <h3 style="margin:0 0 6px;">Checklist do odpalenia sprzedaży</h3>
           <div class="muted-xs">1) 3 zdjęcia + 1 wideo</div>
           <div class="muted-xs">2) 1 mocny tytuł + 3 bullet’y</div>
@@ -231,6 +241,32 @@
 
   function n(v){ v = Number(v); return isFinite(v) ? v : 0; }
   function money(x){ return (Math.round(x*100)/100).toFixed(2) + " zł"; }
+
+  function showToast(msg, type="info"){
+    const toast = document.getElementById("qmIntelToast");
+    if (!toast) return;
+    toast.style.display = "";
+    toast.textContent = msg;
+
+    toast.style.border = "1px solid rgba(148,163,184,.25)";
+    toast.style.background = "rgba(148,163,184,.08)";
+    if (type === "error") {
+      toast.style.border = "1px solid rgba(239,68,68,.35)";
+      toast.style.background = "rgba(239,68,68,.10)";
+    } else if (type === "success") {
+      toast.style.border = "1px solid rgba(34,197,94,.30)";
+      toast.style.background = "rgba(34,197,94,.10)";
+    }
+
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display="none", 2600);
+  }
+
+  function setAudit(text){
+    const el = document.getElementById("qmAudit");
+    if (!el) return;
+    el.textContent = text || "—";
+  }
 
   function calc(){
     const buy = n(document.getElementById("buy").value);
@@ -275,6 +311,16 @@
 
     document.getElementById("outReco").textContent = reco;
     document.getElementById("outWhy").textContent = why;
+
+    // ✅ AUTO AUDYT (nie blokuje, tylko informuje)
+    const warn = [];
+    if (profit > 0 && profit < 20) warn.push("Profit < 20 zł (słaba poduszka).");
+    if (profit <= 0) warn.push("Profit ≤ 0 (nieopłacalne).");
+    if (margin > 0 && margin < 15) warn.push("Marża % < 15% (mały margines na reklamę/zwroty).");
+    if (ads > 0 && ads > profit) warn.push("Reklama zjada profit (ads > profit).");
+    setAudit(warn.length ? warn.join(" ") : "OK: wynik wygląda zdrowo.");
+
+    return { buy, sell, ship, fee, ads, risk, cost, profit, margin, bep, score };
   }
 
   function resetCalc(){
@@ -286,19 +332,85 @@
       const el = document.getElementById(id);
       if (el) el.textContent = "—";
     });
+    setAudit("—");
   }
+
+  // ✅ GLOBAL COST PRESET (PRIVATE) — Ctrl+Shift+K
+  (function setupGlobalCosts(){
+    const LS_COST_PRESET = "qm_cost_preset_v1";
+
+    function getPreset(){
+      try {
+        const raw = localStorage.getItem(LS_COST_PRESET);
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
+
+    function setPreset(obj){
+      localStorage.setItem(LS_COST_PRESET, JSON.stringify(obj));
+    }
+
+    function applyPreset(force=false){
+      const p = getPreset();
+      if (!p) return;
+
+      const ship = document.getElementById("ship");
+      const fee  = document.getElementById("fee");
+      const ads  = document.getElementById("ads");
+      const risk = document.getElementById("risk");
+
+      const put = (el, v) => {
+        if (!el) return;
+        if (force || el.value === "" || el.value == null) el.value = String(Number(v ?? 0));
+      };
+
+      put(ship, p.ship);
+      put(fee,  p.fee);
+      put(ads,  p.ads);
+      put(risk, p.risk);
+    }
+
+    document.addEventListener("keydown", function(e){
+      if (!e.ctrlKey || !e.shiftKey) return;
+      if (String(e.key).toLowerCase() !== "k") return;
+
+      e.preventDefault();
+
+      const current = getPreset() || {ship:0, fee:0, ads:0, risk:0};
+
+      const ship = prompt("Domyślna wysyłka:", current.ship);
+      if (ship === null) return;
+
+      const fee = prompt("Domyślne prowizje:", current.fee);
+      if (fee === null) return;
+
+      const ads = prompt("Domyślna reklama:", current.ads);
+      if (ads === null) return;
+
+      const risk = prompt("Domyślne ryzyko:", current.risk);
+      if (risk === null) return;
+
+      setPreset({
+        ship: Number(ship),
+        fee: Number(fee),
+        ads: Number(ads),
+        risk: Number(risk)
+      });
+
+      showToast("Zapisano globalne koszty (Ctrl+Shift+K).", "success");
+      applyPreset(true);
+      try { calc(); } catch {}
+    });
+
+    document.addEventListener("DOMContentLoaded", () => applyPreset(false));
+
+    // expose for prefill
+    window.qmApplyPreset = applyPreset;
+  })();
 
   // ✅ PREFILL z QualitetMarket → Intelligence
   (function prefillFromQualitetMarket(){
     const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
-    const toast = document.getElementById("qmIntelToast");
-
-    function show(msg){
-      if (!toast) return;
-      toast.style.display = "";
-      toast.textContent = msg;
-      setTimeout(()=> toast.style.display="none", 2800);
-    }
 
     let payload = null;
     try {
@@ -312,28 +424,103 @@
     const pName = document.getElementById("pName");
     const buy   = document.getElementById("buy");
     const sell  = document.getElementById("sell");
-    const ship  = document.getElementById("ship");
-    const fee   = document.getElementById("fee");
-    const ads   = document.getElementById("ads");
-    const risk  = document.getElementById("risk");
 
     if (pName) pName.value = String(payload.name || "");
     if (buy && Number.isFinite(Number(payload.wholesale))) buy.value = Number(payload.wholesale).toFixed(2);
     if (sell && Number.isFinite(Number(payload.retail))) sell.value = Number(payload.retail).toFixed(2);
 
-    // jeśli koszty puste — ustaw 0 (żeby calc od razu działał sensownie)
-    const ensure0 = (el) => { if (el && (el.value === "" || el.value == null)) el.value = "0"; };
-    ensure0(ship); ensure0(fee); ensure0(ads); ensure0(risk);
+    // zastosuj preset kosztów (jeśli ustawiony)
+    try { window.qmApplyPreset && window.qmApplyPreset(false); } catch {}
+
+    // jeśli nadal puste — ustaw 0
+    ["ship","fee","ads","risk"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && (el.value === "" || el.value == null)) el.value = "0";
+    });
 
     // policz
     try { calc(); } catch {}
 
-    // info
     const sup = payload.supplierName ? ` • Hurtownia: ${payload.supplierName}` : "";
-    show(`Zaciągnięto produkt z QualitetMarket${sup}.`);
+    showToast(`Zaciągnięto produkt z QualitetMarket${sup}.`, "success");
 
     // wyczyść, żeby nie prefillowało w kółko
     localStorage.removeItem(LS_INTEL_PREFILL);
+  })();
+
+  // ✅ Kopiuj wynik do schowka (listing / notatki)
+  (function bindCopy(){
+    const btn = document.getElementById("qmCopyResultBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+      const res = calc();
+      const name = (document.getElementById("pName").value || "Produkt").trim();
+
+      const text =
+`[Intelligence]
+Produkt: ${name}
+Buy: ${res.buy.toFixed(2)} zł
+Sell: ${res.sell.toFixed(2)} zł
+Koszty: ship ${res.ship.toFixed(2)}, fee ${res.fee.toFixed(2)}, ads ${res.ads.toFixed(2)}, risk ${res.risk.toFixed(2)}
+Profit: ${res.profit.toFixed(2)} zł
+Marża%: ${res.margin.toFixed(1)}%
+BEP: ${res.bep.toFixed(2)} zł
+Score: ${Math.round(res.score)}`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Skopiowano wynik do schowka.", "success");
+      } catch {
+        showToast("Nie mogę skopiować (blokada przeglądarki). Zaznacz i skopiuj ręcznie.", "error");
+        alert(text);
+      }
+    });
+  })();
+
+  // ✅ Ustaw cenę sprzedaży pod target (marża% lub profit zł)
+  (function bindTarget(){
+    const btn = document.getElementById("qmTargetPriceBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const buy = n(document.getElementById("buy").value);
+      const ship = n(document.getElementById("ship").value);
+      const fee  = n(document.getElementById("fee").value);
+      const ads  = n(document.getElementById("ads").value);
+      const risk = n(document.getElementById("risk").value);
+
+      const cost = buy + ship + fee + ads + risk;
+      if (cost <= 0) return showToast("Uzupełnij koszt zakupu i koszty.", "error");
+
+      const mode = prompt("Wpisz: M=marża% albo P=profit zł (np. M25 albo P30):", "M25");
+      if (!mode) return;
+
+      const m = mode.trim().toUpperCase();
+      const type = m.startsWith("P") ? "P" : "M";
+      const val = Number(m.slice(1).replace(",", "."));
+
+      if (!isFinite(val) || val < 0) return showToast("Zły format targetu.", "error");
+
+      let sell = 0;
+
+      if (type === "P") {
+        // target profit zł: sell = cost + profit
+        sell = cost + val;
+      } else {
+        // target margin%: margin = (sell - cost)/sell
+        // => sell = cost / (1 - margin)
+        const target = val / 100;
+        if (target >= 0.95) return showToast("Marża% za wysoka (>=95%).", "error");
+        sell = cost / (1 - target);
+      }
+
+      if (!isFinite(sell) || sell <= 0) return showToast("Nie da się policzyć ceny.", "error");
+
+      document.getElementById("sell").value = sell.toFixed(2);
+      calc();
+      showToast(`Ustawiono cenę sprzedaży: ${sell.toFixed(2)} zł`, "success");
+    });
   })();
 
   // mobilne menu (hamburger)
