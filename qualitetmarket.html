@@ -21,7 +21,7 @@
   </script>
 </head>
 
-<body>
+<body data-require="pro">
 
 <div class="nav" data-nav-root>
   <div class="nav-inner">
@@ -39,15 +39,18 @@
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a class="active" href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a href="blueprints.html">Blueprints</a>
+      <a href="intelligence.html" data-elite-link>Intelligence</a>
+      <a href="blueprints.html" data-elite-link>Blueprints</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="dashboard.html">Dashboard</a>
+      <a href="dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
+      <!-- CTA (podmieniane przez JS) -->
+      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+
+      <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
   </div>
 </div>
@@ -65,9 +68,9 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-primary" href="intelligence.html">Sprawdź produkt (Intelligence)</a>
+      <a class="btn btn-primary" href="intelligence.html" data-elite-btn>Sprawdź produkt (Intelligence)</a>
       <a class="btn" href="hurtownie.html">Wejdź w Hurtownie</a>
-      <a class="btn btn-secondary" href="blueprints.html">Blueprinty wdrożenia</a>
+      <a class="btn btn-secondary" href="blueprints.html" data-elite-btn>Blueprinty wdrożenia</a>
       <a class="btn" href="cennik.html">Upgrade planu</a>
     </div>
   </div>
@@ -83,7 +86,7 @@
         <h3>Intelligence</h3>
         <p>Scoring, marża, koszty i szybka decyzja: brać czy nie.</p>
         <div class="hr"></div>
-        <a class="btn btn-primary" href="intelligence.html">Otwórz Intelligence</a>
+        <a class="btn btn-primary" href="intelligence.html" data-elite-btn>Otwórz Intelligence</a>
       </div>
 
       <div class="card reveal d3">
@@ -97,7 +100,7 @@
         <h3>Blueprints</h3>
         <p>Gotowe schematy sprzedażowe, które wdrażasz od ręki.</p>
         <div class="hr"></div>
-        <a class="btn" href="blueprints.html">Otwórz Blueprints</a>
+        <a class="btn" href="blueprints.html" data-elite-btn>Otwórz Blueprints</a>
       </div>
     </div>
   </div>
@@ -131,7 +134,7 @@
         <div class="hr"></div>
         <div class="hero-cta" style="margin:0;">
           <a class="btn btn-secondary" href="dashboard.html">Przejdź do Dashboard</a>
-          <a class="btn" href="intelligence.html">Start: Intelligence</a>
+          <a class="btn" href="intelligence.html" data-elite-btn>Start: Intelligence</a>
         </div>
       </div>
     </div>
@@ -163,7 +166,7 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<!-- assets/app.js fallback: assets/ oraz root -->
+<!-- app.js fallback: assets/ oraz root -->
 <script>
   (function () {
     const tryLoad = (src, next) => {
@@ -178,6 +181,25 @@
 </script>
 
 <script>
+  function logout() {
+    localStorage.setItem("is_logged_in", "false");
+    window.location.href = "login.html";
+  }
+
+  // CTA w nav: guest vs logged
+  (function () {
+    const logged = localStorage.getItem("is_logged_in") === "true";
+    document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
+    document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
+
+    // Jeśli nie ELITE, chowamy elementy ELITE (UX). PlanGuard też to robi w nav.
+    const plan = (localStorage.getItem("status") || "BASIC").toUpperCase();
+    const safePlan = (plan === "PRO" || plan === "ELITE") ? plan : "BASIC";
+    if (safePlan !== "ELITE") {
+      document.querySelectorAll("[data-elite-btn], [data-elite-link]").forEach(el => el.style.display = "none");
+    }
+  })();
+
   // mobilne menu (hamburger)
   (function () {
     const root = document.querySelector("[data-nav-root]");
