@@ -50,10 +50,15 @@
   const okToken = okPlan && token === VALID_TOKENS[plan];
 
   if (okToken) {
-    // ✅ spójnie z planGuard.js
+    // ✅ ŹRÓDŁO PRAWDY
     localStorage.setItem("status", plan);
+    localStorage.setItem("last_paid_plan", plan);   // <-- klucz naprawiający spadki do BASIC
     localStorage.setItem("is_logged_in", "true");
     localStorage.setItem("paid_at", new Date().toISOString());
+
+    // kompatybilność wstecz (jeśli gdzieś stary kod czyta inne klucze)
+    localStorage.setItem("plan", plan);
+    localStorage.setItem("qm_plan", plan);
 
     // demo: ważność planu 30 dni (możesz zmienić)
     localStorage.setItem("plan_expires_at", addDaysISO(30));
@@ -73,7 +78,6 @@
     }, 1200);
 
   } else {
-
     box.innerHTML = `
       <h2>❌ Weryfikacja nieudana</h2>
       <p style="margin-top:10px;color:#cbd5e1;">
