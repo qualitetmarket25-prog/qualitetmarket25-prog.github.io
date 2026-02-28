@@ -35,6 +35,17 @@
     textarea.input { min-height: 90px; resize: vertical; }
     .kpi strong{ font-size: 18px; }
     .table td { vertical-align: top; }
+
+    /* follow-up badge */
+    .fu { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; border:1px solid rgba(148,163,184,.25); background: rgba(148,163,184,.08); color:#cbd5e1; font-size:12px; }
+    .fu .dot { width:8px;height:8px;border-radius:999px; display:inline-block; background: rgba(148,163,184,.8); }
+    .fu.due { border-color: rgba(250,204,21,.45); background: rgba(250,204,21,.10); }
+    .fu.due .dot { background: rgba(250,204,21,.95); }
+    .fu.ok { border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.08); }
+    .fu.ok .dot { background: rgba(34,197,94,.95); }
+
+    .toggle { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; border:1px solid rgba(148,163,184,.25); background: rgba(148,163,184,.08); color:#cbd5e1; font-size:12px; }
+    .toggle input { transform: scale(1.1); }
   </style>
 </head>
 
@@ -76,7 +87,7 @@
   <div class="hero-card reveal">
     <span class="badge"><span class="dot"></span> QualitetMarket • CRM</span>
     <div class="h1">Dashboard</div>
-    <div class="p">Twoje produkty w statusach: do wystawienia → wystawione → sprzedane. Zero chaosu, więcej kasy.</div>
+    <div class="p">Statusy + follow-up automatyczny: odśwież → obniżka → zmiana tytułu. Zero chaosu.</div>
 
     <div class="hr"></div>
 
@@ -95,7 +106,7 @@
   <div class="section">
     <div class="section-title reveal">
       <h2>Panel</h2>
-      <p>Tu ma być prosto: zapisujesz, ustawiasz status, i sprzedajesz.</p>
+      <p>Najważniejsze: wystawione → follow-up w terminie → sprzedaż.</p>
     </div>
 
     <div class="grid-3x">
@@ -151,6 +162,13 @@
             <option value="vinted">Vinted</option>
             <option value="inne">Inne</option>
           </select>
+
+          <!-- ✅ NOWE: follow-up dziś -->
+          <label class="toggle">
+            <input type="checkbox" id="onlyDue" />
+            Tylko follow-up dziś
+          </label>
+
           <button class="btn btn-sm" id="btnReload" type="button">Odśwież</button>
           <button class="btn btn-sm btn-secondary" id="btnExport" type="button">Eksport JSON</button>
         </div>
@@ -166,6 +184,7 @@
               <th>Produkt</th>
               <th>Finanse</th>
               <th>Status</th>
+              <th>Follow-up</th>
               <th>Link / Notatki</th>
               <th>Akcje</th>
             </tr>
@@ -173,11 +192,15 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
+
+      <div class="muted-xs" style="margin-top:10px;">
+        Reguły follow-up dla <strong>Wystawione</strong>: 24h odśwież • 48h obniż −5% • 72h zmień tytuł/miniaturę.
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Modal (prosty) -->
+<!-- Modal -->
 <div id="modal" style="display:none; position:fixed; inset:0; background: rgba(0,0,0,.55); padding: 18px; overflow:auto; z-index: 9999;">
   <div class="card" style="max-width: 980px; margin: 0 auto;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
@@ -284,6 +307,11 @@
   const LS_INTEL = "qm_intel_prefill_v1";
   const LS_LISTING = "qm_listing_prefill_v1";
 
+  // ===== Follow-up rules =====
+  const FU_24H = 24 * 60 * 60 * 1000;
+  const FU_48H = 48 * 60 * 60 * 1000;
+  const FU_72H = 72 * 60 * 60 * 1000;
+
   const $ = (s) => document.querySelector(s);
   const n = (v) => { v = Number(v); return isFinite(v) ? v : 0; };
   const money = (x) => (Math.round(n(x)*100)/100).toFixed(2) + " zł";
@@ -318,6 +346,15 @@
     mToast._t = setTimeout(()=> t.style.display="none", 2600);
   }
 
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
   function loadCRM(){
     try {
       const raw = localStorage.getItem(LS_CRM);
@@ -342,7 +379,6 @@
   }
 
   function calcProfit(item){
-    // profit = soldPrice - buy (bez kosztów; koszty są w Intelligence)
     const buy = n(item.buy);
     const sold = n(item.soldPrice);
     if (!sold) return 0;
@@ -359,11 +395,146 @@
     $("#kProfit").textContent = money(profit);
   }
 
+  // ===== Follow-up engine =====
+  function ensureFollowUp(item){
+    // tylko dla "listed"
+    if (item.status !== "listed") return item;
+
+    const now = Date.now();
+    const stage = Number.isFinite(Number(item.fuStage)) ? Number(item.fuStage) : 0;
+
+    // anchor: kiedy zaczęliśmy "listed"
+    const anchor = Number.isFinite(Number(item.listedAt)) ? Number(item.listedAt) : (Number.isFinite(Number(item.ts)) ? Number(item.ts) : now);
+
+    // jeśli nie ma listedAt, ustaw
+    if (!Number.isFinite(Number(item.listedAt))) item.listedAt = anchor;
+
+    // jeśli nie ma terminu follow-up, ustaw wg stage
+    if (!Number.isFinite(Number(item.fuNextTs))) {
+      item.fuStage = stage;
+      item.fuNextTs =
+        stage === 0 ? (anchor + FU_24H) :
+        stage === 1 ? (anchor + FU_48H) :
+        stage === 2 ? (anchor + FU_72H) :
+        0; // stage 3 = koniec
+      item.fuUpdatedAt = now;
+    }
+
+    return item;
+  }
+
+  function fuLabel(item){
+    if (item.status !== "listed") return { text: "—", due: false, cls: "" };
+
+    const stage = Number.isFinite(Number(item.fuStage)) ? Number(item.fuStage) : 0;
+    const next = Number.isFinite(Number(item.fuNextTs)) ? Number(item.fuNextTs) : 0;
+
+    if (stage >= 3 || !next) return { text: "Zrobione ✅", due: false, cls: "ok" };
+
+    const title =
+      stage === 0 ? "24h: Odśwież" :
+      stage === 1 ? "48h: Obniż −5%" :
+      "72h: Zmień tytuł";
+
+    const due = Date.now() >= next;
+    const when = new Date(next).toLocaleString("pl-PL");
+    return { text: `${title} • ${when}`, due, cls: due ? "due" : "" };
+  }
+
+  function buildFollowUpText(item){
+    const stage = Number.isFinite(Number(item.fuStage)) ? Number(item.fuStage) : 0;
+    const name = item.name || "Produkt";
+    const price = n(item.price) ? money(item.price) : "—";
+    const ch = item.channel || "—";
+
+    if (stage === 0) {
+      return `[FOLLOW-UP 24h]
+Odśwież ogłoszenie: ${name}
+Kanał: ${ch}
+Szybkie akcje:
+- podbij / odśwież ofertę
+- dołóż 1 zdjęcie (miniatura)
+- dopisz 1 konkret w tytule (marka/model/rozmiar)
+
+Cena teraz: ${price}`;
+    }
+    if (stage === 1) {
+      return `[FOLLOW-UP 48h]
+Obniż cenę o 5%: ${name}
+Kanał: ${ch}
+Cel: odblokować popyt + negocjacje.
+Cena teraz: ${price}`;
+    }
+    if (stage === 2) {
+      return `[FOLLOW-UP 72h]
+Zmień tytuł/miniaturę: ${name}
+Kanał: ${ch}
+Akcje:
+- nowa miniatura (najlepsze zdjęcie)
+- tytuł: marka + model + stan + “wysyłka”
+- w opisie: 3 konkrety + szybka wysyłka`;
+    }
+    return `OK`;
+  }
+
+  async function copyToClipboard(text){
+    try {
+      await navigator.clipboard.writeText(String(text || ""));
+      toast("Skopiowano follow-up.", "success");
+    } catch {
+      toast("Nie mogę skopiować (blokada). Skopiuj ręcznie.", "error");
+      alert(text);
+    }
+  }
+
+  function applyPriceDrop(item, pct){
+    const p = n(item.price);
+    if (!p) return item;
+    const next = Math.max(1, p * (1 - pct));
+    // psychologiczna końcówka .99 / .90
+    const floor = Math.floor(next);
+    const frac = next - floor;
+    const psych = floor + (frac < 0.5 ? 0.99 : 0.90);
+    item.price = Math.round(psych * 100) / 100;
+    return item;
+  }
+
+  function completeFollowUpStep(item, action){
+    // action: "refresh" | "drop5" | "retitle"
+    const now = Date.now();
+    item = ensureFollowUp(item);
+
+    let stage = Number.isFinite(Number(item.fuStage)) ? Number(item.fuStage) : 0;
+
+    if (action === "refresh" && stage === 0) {
+      item.fuStage = 1;
+      item.fuNextTs = item.listedAt + FU_48H;
+      item.fuUpdatedAt = now;
+      return item;
+    }
+    if (action === "drop5" && stage <= 1) {
+      // obniżka i przejście do etapu 72h
+      item = applyPriceDrop(item, 0.05);
+      item.fuStage = 2;
+      item.fuNextTs = item.listedAt + FU_72H;
+      item.fuUpdatedAt = now;
+      return item;
+    }
+    if (action === "retitle" && stage <= 2) {
+      item.fuStage = 3;
+      item.fuNextTs = 0;
+      item.fuUpdatedAt = now;
+      return item;
+    }
+    return item;
+  }
+
   function getFilters(){
     return {
       q: String($("#q").value || "").trim().toLowerCase(),
       status: String($("#status").value || "").trim(),
-      channel: String($("#channel").value || "").trim()
+      channel: String($("#channel").value || "").trim(),
+      onlyDue: !!$("#onlyDue").checked
     };
   }
 
@@ -375,27 +546,54 @@
     if (f.channel) out = out.filter(x => x.channel === f.channel);
     if (f.q) out = out.filter(x => String(x.name||"").toLowerCase().includes(f.q));
 
-    // sort: status priority + newest
-    const pr = { todo: 0, listed: 1, sold: 2, drop: 3 };
-    out.sort((a,b)=>
-      (pr[a.status] - pr[b.status]) ||
-      (Number(b.ts||0) - Number(a.ts||0))
-    );
+    // ensure FU data
+    out = out.map(x => {
+      const y = { ...x };
+      ensureFollowUp(y);
+      return y;
+    });
+
+    if (f.onlyDue) {
+      out = out.filter(x => {
+        if (x.status !== "listed") return false;
+        const next = Number.isFinite(Number(x.fuNextTs)) ? Number(x.fuNextTs) : 0;
+        const stage = Number.isFinite(Number(x.fuStage)) ? Number(x.fuStage) : 0;
+        if (stage >= 3 || !next) return false;
+        return Date.now() >= next;
+      });
+    }
+
+    // sort: najpierw DUE follow-up, potem status, potem newest
+    const pr = { todo: 1, listed: 0, sold: 2, drop: 3 };
+    out.sort((a,b)=>{
+      const aDue = (a.status==="listed" && n(a.fuNextTs) && n(a.fuStage) < 3 && Date.now() >= n(a.fuNextTs)) ? 0 : 1;
+      const bDue = (b.status==="listed" && n(b.fuNextTs) && n(b.fuStage) < 3 && Date.now() >= n(b.fuNextTs)) ? 0 : 1;
+      return (aDue - bDue) || (pr[a.status] - pr[b.status]) || (Number(b.ts||0) - Number(a.ts||0));
+    });
 
     $("#meta").textContent = `Wszystkie: ${list.length} • Widoczne: ${out.length}`;
     return out;
   }
 
   function render(){
-    const list = loadCRM();
-    updateKpis(list);
+    const list0 = loadCRM();
+    updateKpis(list0);
+
+    // zapis FU danych jeśli brak (żeby nie było "puste")
+    const list = list0.map(x => {
+      const y = { ...x };
+      ensureFollowUp(y);
+      return y;
+    });
+    saveCRM(list);
 
     const filtered = applyFilters(list);
+
     const tbody = $("#tbody");
     tbody.innerHTML = "";
 
     if (!filtered.length){
-      tbody.innerHTML = `<tr><td colspan="5" class="muted-xs">Brak pozycji. Kliknij “+ Dodaj pozycję”.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="muted-xs">Brak pozycji. Kliknij “+ Dodaj pozycję”.</td></tr>`;
       return;
     }
 
@@ -411,6 +609,13 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
       const link = item.link ? `<a href="${item.link}" target="_blank" rel="noopener">otwórz</a>` : "—";
       const notes = item.notes ? `<div class="small">${escapeHtml(item.notes).slice(0,220)}${item.notes.length>220?"…":""}</div>` : `<span class="muted-xs">—</span>`;
 
+      const fu = fuLabel(item);
+      const fuHtml = item.status === "listed"
+        ? `<span class="fu ${fu.cls}"><span class="dot"></span>${escapeHtml(fu.text)}</span>`
+        : `<span class="muted-xs">—</span>`;
+
+      const showFuActions = item.status === "listed";
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>
@@ -420,7 +625,13 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
         <td class="mono" style="white-space:pre-line;">${escapeHtml(fin)}</td>
         <td>
           <span class="tag"><span class="dot ${st.dot}"></span>${st.t}</span>
-          <div class="small">Dodano: ${new Date(item.ts||Date.now()).toLocaleString("pl-PL")}</div>
+          <div class="small">Dodano/akt.: ${new Date(item.ts||Date.now()).toLocaleString("pl-PL")}</div>
+        </td>
+        <td>
+          ${fuHtml}
+          ${showFuActions ? `<div class="small" style="margin-top:6px;">
+            Etap: ${Number.isFinite(Number(item.fuStage)) ? Number(item.fuStage) : 0}/3
+          </div>` : ``}
         </td>
         <td>
           <div class="small">Link: ${link}</div>
@@ -434,19 +645,20 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
             <button class="btn btn-sm" data-act="toSold" data-id="${item.id}">→ Sold</button>
             <button class="btn btn-sm btn-danger" data-act="del" data-id="${item.id}">Usuń</button>
           </div>
+
+          ${showFuActions ? `
+            <div class="row-actions" style="margin-top:10px;">
+              <button class="btn btn-sm btn-secondary" data-act="fuCopy" data-id="${item.id}">Skopiuj follow-up</button>
+              <button class="btn btn-sm" data-act="fu24" data-id="${item.id}">Odświeżone (24h)</button>
+              <button class="btn btn-sm" data-act="fu48" data-id="${item.id}">Obniż −5% (48h)</button>
+              <button class="btn btn-sm" data-act="fu72" data-id="${item.id}">Zmień tytuł (72h)</button>
+              <button class="btn btn-sm btn-secondary" data-act="drop10" data-id="${item.id}">Obniż −10%</button>
+            </div>
+          ` : ``}
         </td>
       `;
       tbody.appendChild(tr);
     });
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
   }
 
   // ===== Modal =====
@@ -478,10 +690,27 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
     if (editingId){
       const idx = list.findIndex(x=> x.id === editingId);
       if (idx >= 0){
-        list[idx] = { ...list[idx], ...payload, id: editingId };
+        const prev = list[idx];
+        const next = { ...prev, ...payload, id: editingId, ts: Date.now() };
+
+        // jeśli zmiana statusu na listed i brak listedAt -> ustaw
+        if (prev.status !== "listed" && next.status === "listed") {
+          next.listedAt = Date.now();
+          next.fuStage = 0;
+          next.fuNextTs = next.listedAt + FU_24H;
+        }
+        list[idx] = next;
       }
     } else {
-      list.unshift({ ...payload, id: uid(), ts: Date.now() });
+      const item = { ...payload, id: uid(), ts: Date.now() };
+
+      if (item.status === "listed") {
+        item.listedAt = Date.now();
+        item.fuStage = 0;
+        item.fuNextTs = item.listedAt + FU_24H;
+      }
+
+      list.unshift(item);
     }
 
     saveCRM(list);
@@ -509,6 +738,7 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
     $("#q").addEventListener("input", render);
     $("#status").addEventListener("change", render);
     $("#channel").addEventListener("change", render);
+    $("#onlyDue").addEventListener("change", render);
 
     $("#btnNew").addEventListener("click", ()=> openModal(null));
 
@@ -545,11 +775,9 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
         status: String($("#mStatus").value || "todo"),
         link: String($("#mLink").value || "").trim(),
         soldPrice: n($("#mSoldPrice").value),
-        notes: String($("#mNotes").value || "").trim(),
-        ts: editingId ? Date.now() : undefined
+        notes: String($("#mNotes").value || "").trim()
       };
 
-      // jeśli SOLD, to wymagaj soldPrice
       if (payload.status === "sold" && payload.soldPrice <= 0){
         return mToast("Dla statusu 'Sprzedane' wpisz cenę sprzedaży.", "error");
       }
@@ -582,7 +810,7 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
       $("#mChannel").value = p.channel || "allegro";
       $("#mStatus").value = "listed";
       $("#mNotes").value = (p.notes || "");
-      mToast("Zaciągnięto z Listing.", "success");
+      mToast("Zaciągnięto z Listing (status: listed).", "success");
     });
 
     // tabela akcje
@@ -592,14 +820,19 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
 
       const act = btn.getAttribute("data-act");
       const id = btn.getAttribute("data-id");
+
       let list = loadCRM();
-      const item = list.find(x=> x.id === id);
+      const idx = list.findIndex(x=> x.id === id);
+      const item = idx >= 0 ? { ...list[idx] } : null;
       if (!item) return;
 
-      if (act === "edit"){
-        openModal(item);
-        return;
-      }
+      const persist = (nextItem)=>{
+        list[idx] = nextItem;
+        saveCRM(list);
+        render();
+      };
+
+      if (act === "edit"){ openModal(item); return; }
 
       if (act === "del"){
         list = list.filter(x=> x.id !== id);
@@ -610,29 +843,65 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
       }
 
       const setStatus = (s)=>{
-        const idx = list.findIndex(x=> x.id === id);
-        if (idx < 0) return;
-        list[idx] = { ...list[idx], status: s, ts: Date.now() };
-        saveCRM(list);
-        render();
+        const next = { ...item, status: s, ts: Date.now() };
+
+        if (item.status !== "listed" && s === "listed") {
+          next.listedAt = Date.now();
+          next.fuStage = 0;
+          next.fuNextTs = next.listedAt + FU_24H;
+        }
+        persist(next);
       };
 
-      if (act === "toTodo") setStatus("todo");
-      if (act === "toListed") setStatus("listed");
+      if (act === "toTodo") return setStatus("todo");
+      if (act === "toListed") return setStatus("listed");
       if (act === "toSold"){
-        // jeśli nie ma soldPrice – poproś szybko
         if (!n(item.soldPrice)){
           const sp = prompt("Podaj cenę sprzedaży (zł):", String(n(item.price).toFixed(2)));
           if (sp === null) return;
           const soldPrice = Number(String(sp).replace(",", "."));
           if (!isFinite(soldPrice) || soldPrice <= 0) return toast("Zła cena sprzedaży.", "error");
-          const idx = list.findIndex(x=> x.id === id);
-          list[idx] = { ...list[idx], soldPrice, status: "sold", ts: Date.now() };
-          saveCRM(list);
-          render();
+          persist({ ...item, soldPrice, status: "sold", ts: Date.now() });
           return;
         }
-        setStatus("sold");
+        persist({ ...item, status: "sold", ts: Date.now() });
+        return;
+      }
+
+      // ✅ FOLLOW-UP actions
+      if (act === "fuCopy"){
+        const nextItem = ensureFollowUp(item);
+        const text = buildFollowUpText(nextItem);
+        copyToClipboard(text);
+        return;
+      }
+
+      if (act === "fu24"){
+        const next = completeFollowUpStep(item, "refresh");
+        persist(next);
+        toast("Odhaczone: Odświeżone (24h).", "success");
+        return;
+      }
+
+      if (act === "fu48"){
+        const next = completeFollowUpStep(item, "drop5");
+        persist(next);
+        toast("Odhaczone: Obniż −5% (48h).", "success");
+        return;
+      }
+
+      if (act === "fu72"){
+        const next = completeFollowUpStep(item, "retitle");
+        persist(next);
+        toast("Odhaczone: Zmień tytuł (72h).", "success");
+        return;
+      }
+
+      if (act === "drop10"){
+        const next = applyPriceDrop(ensureFollowUp(item), 0.10);
+        persist({ ...next, ts: Date.now() });
+        toast("Zrobiono: Obniżka −10%.", "success");
+        return;
       }
     });
 
