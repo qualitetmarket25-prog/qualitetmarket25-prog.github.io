@@ -40,6 +40,7 @@
       <a href="cennik.html">Plany</a>
       <a class="active" href="qualitetmarket.html">QualitetMarket</a>
       <a href="intelligence.html">Intelligence</a>
+      <a href="listing.html">Listing</a>
       <a href="blueprints.html">Blueprints</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a href="dashboard.html" data-auth-only>Dashboard</a>
@@ -58,12 +59,14 @@
   <div class="hero-card reveal">
     <span class="badge"><span class="dot"></span> QualitetMarket • Global TOP</span>
     <div class="h1">Global TOP</div>
-    <div class="p">Ranking produktów z hurtowni (zapisanych w localStorage) + 1 klik do Intelligence.</div>
+    <div class="p">Ranking produktów z hurtowni (zapisanych w localStorage) + 1 klik do Intelligence / Listing.</div>
 
     <div class="hr"></div>
 
     <div class="hero-cta">
       <a class="btn btn-secondary" href="hurtownie.html">Dodaj hurtownię (CSV)</a>
+      <a class="btn" href="intelligence.html">Intelligence</a>
+      <a class="btn" href="listing.html">Listing</a>
       <a class="btn" href="cennik.html">Plany</a>
       <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
     </div>
@@ -130,9 +133,9 @@
 
   const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
   const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
+  const LS_LISTING_PREFILL = "qm_listing_prefill_v1";
 
   const MAX_RENDER = 500;
-
   const $ = (s) => document.querySelector(s);
 
   function showToast(message, type="info"){
@@ -195,7 +198,6 @@
   }
 
   function buildGlobalRows(suppliers){
-    // spłaszcz do listy produktów z supplierName
     const out = [];
     for (const sup of suppliers) {
       const supplierName = sup?.supplierName || "Hurtownia";
@@ -234,6 +236,39 @@
     ).join("");
   }
 
+  function goIntel(row){
+    localStorage.setItem(LS_INTEL_PREFILL, JSON.stringify({
+      name: row.name,
+      wholesale: row.wholesale,
+      retail: row.retail,
+      supplierName: row.supplierName,
+      score: row.score,
+      marginPct: row.marginPct
+    }));
+    window.location.href = "intelligence.html";
+  }
+
+  function goListing(row){
+    // Listing generator najlepiej odpalać z ELITE
+    if (!isElite()) {
+      showToast("Listing 1-klik wymaga planu ELITE (upgrade w Cennik).", "error");
+      return;
+    }
+
+    localStorage.setItem(LS_LISTING_PREFILL, JSON.stringify({
+      channel: "allegro",
+      name: row.name,
+      wholesale: row.wholesale,
+      retail: row.retail,
+      condition: "nowe",
+      shipping: "tak",
+      city: "",
+      features: "",
+      notes: row.supplierName ? ("Hurtownia: " + row.supplierName) : ""
+    }));
+    window.location.href = "listing.html";
+  }
+
   function renderTable(rows){
     const tbody = $("#qmGlobalTbody");
     if (!tbody) return;
@@ -253,12 +288,17 @@
         <td>${isFinite(Number(r.marginPct)) ? Number(r.marginPct).toFixed(2) + "%" : "–"}</td>
         <td><strong>${Math.round(Number(r.score||0))}</strong></td>
         <td>${escapeHtml(r.supplierName)}</td>
-        <td>
+        <td style="white-space:nowrap;">
           <button class="btn btn-sm btn-primary"
             data-action="intel"
+            data-idx="${idx}">
+            Wyślij do Intelligence
+          </button>
+          <button class="btn btn-sm btn-secondary"
+            data-action="listing"
             data-idx="${idx}"
             ${elite ? "" : "disabled title='Wymaga planu ELITE'"}>
-            Wyślij do Intelligence
+            Zrób Listing
           </button>
         </td>
       `;
@@ -266,24 +306,23 @@
     });
 
     tbody.onclick = (e) => {
-      const btn = e.target.closest('button[data-action="intel"]');
+      const btn = e.target.closest('button[data-action]');
       if (!btn) return;
-      if (!isElite()) return;
 
+      const action = btn.getAttribute("data-action");
       const idx = Number(btn.getAttribute("data-idx"));
       const row = rows[idx];
       if (!row) return;
 
-      localStorage.setItem(LS_INTEL_PREFILL, JSON.stringify({
-        name: row.name,
-        wholesale: row.wholesale,
-        retail: row.retail,
-        supplierName: row.supplierName,
-        score: row.score,
-        marginPct: row.marginPct
-      }));
+      if (action === "intel") {
+        goIntel(row);
+        return;
+      }
 
-      window.location.href = "intelligence.html";
+      if (action === "listing") {
+        goListing(row);
+        return;
+      }
     };
   }
 
