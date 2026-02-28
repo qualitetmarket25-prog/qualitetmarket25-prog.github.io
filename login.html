@@ -28,7 +28,7 @@
     <div class="brand">
       <div class="logo"></div>
       <div class="brand-title">Zarabianie u Szefa</div>
-      <span data-qm-plan class="plan-badge"></span>
+      <span id="planBadge" class="plan-badge"></span>
     </div>
 
     <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
@@ -39,11 +39,12 @@
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="dashboard.html">Dashboard</a>
+      <a href="dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="cennik.html">Wybierz plan</a>
+      <a class="btn btn-sm btn-primary" href="cennik.html" data-guest-only>Wybierz plan</a>
+      <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
   </div>
 </div>
@@ -71,7 +72,8 @@
       <div class="hr"></div>
 
       <div class="hero-cta">
-        <button class="btn btn-primary" type="button" onclick="activateProDemo()">Wejdź jako PRO</button>
+        <button class="btn btn-primary" type="button" onclick="activateDemo('PRO')">Wejdź jako PRO</button>
+        <button class="btn" type="button" onclick="activateDemo('ELITE')">Wejdź jako ELITE</button>
         <a class="btn" href="cennik.html">Zobacz plany</a>
       </div>
 
@@ -112,7 +114,7 @@
       </div>
 
       <div class="hr"></div>
-      <button class="btn btn-danger" type="button" onclick="(window.QM && QM.logout) ? QM.logout() : (localStorage.clear(), location.href='index.html')">
+      <button class="btn btn-danger" type="button" onclick="wipeAccess()">
         Wyloguj / wyczyść dostęp
       </button>
     </div>
@@ -122,17 +124,69 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
+<!-- app.js fallback: assets/ oraz root -->
 <script>
-  // Demo: ustawia PRO + loguje i przerzuca do dashboard
-  function activateProDemo(){
-    localStorage.setItem("qm_user", "demo@pro.local");
-    if (window.QM && typeof window.QM.setPlan === "function") {
-      window.QM.setPlan("PRO");
-    } else {
-      localStorage.setItem("qm_plan", "PRO");
-    }
+  (function () {
+    const tryLoad = (src, next) => {
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.onerror = () => next && next();
+      document.body.appendChild(s);
+    };
+    tryLoad("assets/app.js", () => tryLoad("app.js"));
+  })();
+</script>
+
+<script>
+  function logout() {
+    localStorage.setItem("is_logged_in", "false");
+    window.location.href = "index.html";
+  }
+
+  function wipeAccess() {
+    localStorage.removeItem("is_logged_in");
+    localStorage.removeItem("status");
+    localStorage.removeItem("user_email");
+    localStorage.removeItem("importCount");
+    window.location.href = "index.html";
+  }
+
+  // Demo: loguje i (opcjonalnie) ustawia plan
+  function activateDemo(plan){
+    localStorage.setItem("is_logged_in", "true");
+    localStorage.setItem("user_email", "demo@" + plan.toLowerCase() + ".local");
+    localStorage.setItem("status", plan); // PRO lub ELITE
     window.location.href = "dashboard.html";
   }
+
+  // Logowanie formularzem: tylko login (plan zostaje jak jest)
+  (function(){
+    const form = document.querySelector("[data-login-form]");
+    if (!form) return;
+
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      const email = (new FormData(form).get("email") || "").toString().trim();
+      if (!email) return;
+
+      localStorage.setItem("is_logged_in", "true");
+      localStorage.setItem("user_email", email);
+
+      // jeśli nie ma planu, ustaw BASIC
+      const plan = (localStorage.getItem("status") || "BASIC").toUpperCase();
+      if (plan !== "PRO" && plan !== "ELITE") localStorage.setItem("status", "BASIC");
+
+      window.location.href = "dashboard.html";
+    });
+  })();
+
+  // CTA w nav: guest vs logged
+  (function () {
+    const logged = localStorage.getItem("is_logged_in") === "true";
+    document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
+    document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
+  })();
 
   // mobilne menu (hamburger)
   (function () {
@@ -157,34 +211,6 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") close();
     });
-  })();
-</script>
-
-<!-- assets/app.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
-
-<!-- auth.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/auth.js", () => tryLoad("auth.js"));
   })();
 </script>
 
