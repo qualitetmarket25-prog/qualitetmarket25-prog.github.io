@@ -4,21 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Intelligence – Zarabianie u Szefa</title>
-  <link rel="stylesheet" href="styles.css">
 
-  <!-- planGuard fallback: /js/ oraz root -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- ✅ GitHub Pages: zawsze ./ -->
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- ✅ core + guard -->
+  <script defer src="./app.js"></script>
+  <script defer src="./js/planGuard.js"></script>
 </head>
 
 <body data-require="elite">
@@ -36,19 +28,19 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a class="active" href="intelligence.html">Intelligence</a>
-      <a href="listing.html">Listing</a>
-      <a href="blueprints.html">Blueprints</a>
-      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="dashboard.html" data-auth-only>Dashboard</a>
+      <a href="./index.html">Start</a>
+      <a href="./cennik.html">Plany</a>
+      <a href="./qualitetmarket.html">QualitetMarket</a>
+      <a class="active" href="./intelligence.html">Intelligence</a>
+      <a href="./listing.html">Listing</a>
+      <a href="./blueprints.html">Blueprints</a>
+      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="./dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -65,12 +57,12 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="hurtownie.html">Zaciągnij z Hurtowni</a>
-      <a class="btn" href="qualitetmarket.html">Global TOP</a>
-      <a class="btn" href="listing.html">Listing</a>
-      <a class="btn" href="blueprints.html">Blueprints</a>
-      <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
-      <a class="btn" href="cennik.html">Upgrade planu</a>
+      <a class="btn btn-secondary" href="./hurtownie.html">Zaciągnij z Hurtowni</a>
+      <a class="btn" href="./qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="./listing.html">Listing</a>
+      <a class="btn" href="./blueprints.html">Blueprints</a>
+      <a class="btn" href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a class="btn" href="./cennik.html">Upgrade planu</a>
     </div>
   </div>
 
@@ -80,7 +72,6 @@
       <p>Uzupełnij pola i kliknij “Policz”.</p>
     </div>
 
-    <!-- ✅ toast (prefill / status) -->
     <div id="qmIntelToast" class="note" style="display:none;margin-bottom:12px;"></div>
 
     <div class="grid-2">
@@ -136,7 +127,6 @@
           <button class="btn" type="button" onclick="resetCalc()">Wyczyść</button>
           <button class="btn btn-secondary" type="button" id="qmCopyResultBtn">Kopiuj wynik</button>
           <button class="btn" type="button" id="qmTargetPriceBtn">Ustaw cenę pod target</button>
-          <!-- ✅ NOWE: 1 klik do Listing -->
           <button class="btn btn-primary" type="button" id="qmGoListingBtn">Zrób Listing</button>
         </div>
 
@@ -217,27 +207,13 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<!-- app.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
-
 <script>
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "login.html";
+    window.location.href = "./login.html";
   }
 
-  // CTA w nav: guest vs logged
+  // guest vs logged
   (function () {
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
@@ -298,7 +274,6 @@
     document.getElementById("outProfit").textContent = money(profit);
     document.getElementById("outMargin").textContent = (Math.round(margin*10)/10).toFixed(1) + "%";
     document.getElementById("outScore").textContent = Math.round(score);
-
     document.getElementById("outBep").textContent = money(bep);
 
     let reco = "Odrzuć";
@@ -339,7 +314,7 @@
     setAudit("—");
   }
 
-  // ✅ GLOBAL COST PRESET (PRIVATE) — Ctrl+Shift+K
+  // Ctrl+Shift+K preset costs
   (function setupGlobalCosts(){
     const LS_COST_PRESET = "qm_cost_preset_v1";
 
@@ -407,12 +382,10 @@
     });
 
     document.addEventListener("DOMContentLoaded", () => applyPreset(false));
-
-    // expose for prefill
     window.qmApplyPreset = applyPreset;
   })();
 
-  // ✅ PREFILL z QualitetMarket → Intelligence
+  // Prefill from QualitetMarket
   (function prefillFromQualitetMarket(){
     const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
 
@@ -422,7 +395,6 @@
       payload = raw ? JSON.parse(raw) : null;
     } catch { payload = null; }
 
-    // pozwól na prefill nawet jeśli name puste, ale ceny są
     if (!payload || (!payload.name && !isFinite(Number(payload.wholesale)) && !isFinite(Number(payload.retail)))) return;
 
     const pName = document.getElementById("pName");
@@ -448,7 +420,7 @@
     localStorage.removeItem(LS_INTEL_PREFILL);
   })();
 
-  // ✅ Kopiuj wynik do schowka (listing / notatki)
+  // Copy result
   (function bindCopy(){
     const btn = document.getElementById("qmCopyResultBtn");
     if (!btn) return;
@@ -472,13 +444,13 @@ Score: ${Math.round(res.score)}`;
         await navigator.clipboard.writeText(text);
         showToast("Skopiowano wynik do schowka.", "success");
       } catch {
-        showToast("Nie mogę skopiować (blokada przeglądarki). Zaznacz i skopiuj ręcznie.", "error");
+        showToast("Nie mogę skopiować (blokada). Skopiuj ręcznie.", "error");
         alert(text);
       }
     });
   })();
 
-  // ✅ Ustaw cenę sprzedaży pod target (marża% lub profit zł)
+  // Target price
   (function bindTarget(){
     const btn = document.getElementById("qmTargetPriceBtn");
     if (!btn) return;
@@ -499,14 +471,11 @@ Score: ${Math.round(res.score)}`;
       const m = mode.trim().toUpperCase();
       const type = m.startsWith("P") ? "P" : "M";
       const val = Number(m.slice(1).replace(",", "."));
-
       if (!isFinite(val) || val < 0) return showToast("Zły format targetu.", "error");
 
       let sell = 0;
-
-      if (type === "P") {
-        sell = cost + val;
-      } else {
+      if (type === "P") sell = cost + val;
+      else {
         const target = val / 100;
         if (target >= 0.95) return showToast("Marża% za wysoka (>=95%).", "error");
         sell = cost / (1 - target);
@@ -520,7 +489,7 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
-  // ✅ 1 klik: Intelligence → Listing Generator
+  // Intelligence -> Listing prefill
   (function bindListing(){
     const btn = document.getElementById("qmGoListingBtn");
     if (!btn) return;
@@ -544,11 +513,11 @@ Score: ${Math.round(res.score)}`;
         notes: ""
       }));
 
-      window.location.href = "listing.html";
+      window.location.href = "./listing.html";
     });
   })();
 
-  // mobilne menu (hamburger)
+  // mobile menu
   (function () {
     const root = document.querySelector("[data-nav-root]");
     const btn = document.querySelector("[data-nav-toggle]");
