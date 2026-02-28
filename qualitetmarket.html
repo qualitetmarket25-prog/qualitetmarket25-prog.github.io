@@ -2,11 +2,11 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>QualitetMarket – Zarabianie u Szefa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QualitetMarket – Global TOP</title>
   <link rel="stylesheet" href="styles.css">
 
-  <!-- planGuard fallback: /js/ oraz root -->
+  <!-- planGuard fallback -->
   <script>
     (function () {
       const tryLoad = (src, next) => {
@@ -39,8 +39,8 @@
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a class="active" href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html" data-elite-link>Intelligence</a>
-      <a href="blueprints.html" data-elite-link>Blueprints</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="blueprints.html">Blueprints</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a href="dashboard.html" data-auth-only>Dashboard</a>
 
@@ -55,176 +55,66 @@
 </div>
 
 <div class="wrap">
-
   <div class="hero-card reveal">
-    <span class="badge"><span class="dot"></span> Marketplace System</span>
-    <div class="h1">QualitetMarket</div>
-    <div class="p">
-      Centrum pracy nad ofertą: wybór produktów, marża, dostawcy, content i publikacja.
-      PRO/ELITE zawiera dostęp do panelu sprzedaży Webkul (SP Seller).
-    </div>
+    <span class="badge"><span class="dot"></span> QualitetMarket • Global TOP</span>
+    <div class="h1">Global TOP</div>
+    <div class="p">Ranking produktów z hurtowni (zapisanych w localStorage) + 1 klik do Intelligence.</div>
 
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-primary" href="intelligence.html" data-elite-btn>Sprawdź produkt (Intelligence)</a>
-      <a class="btn" href="hurtownie.html">Wejdź w Hurtownie</a>
-      <a class="btn btn-secondary" href="blueprints.html" data-elite-btn>Blueprinty wdrożenia</a>
-      <a class="btn" href="cennik.html">Upgrade planu</a>
+      <a class="btn btn-secondary" href="hurtownie.html">Dodaj hurtownię (CSV)</a>
+      <a class="btn" href="cennik.html">Plany</a>
+      <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
     </div>
   </div>
 
   <div class="section">
     <div class="section-title reveal">
-      <h2>Moduły QualitetMarket</h2>
-      <p>To jest Twoja ścieżka pracy: produkt → wynik → wdrożenie → sprzedaż.</p>
+      <h2>Produkty</h2>
+      <p>Sort: score → marża% → cena.</p>
     </div>
 
-    <div class="cards">
-      <div class="card reveal d2">
-        <h3>Intelligence</h3>
-        <p>Scoring, marża, koszty i szybka decyzja: brać czy nie.</p>
-        <div class="hr"></div>
-        <a class="btn btn-primary" href="intelligence.html" data-elite-btn>Otwórz Intelligence</a>
-      </div>
-
-      <div class="card reveal d3">
-        <h3>Hurtownie</h3>
-        <p>Import CSV, selekcja ofert i dostawców pod marżę.</p>
-        <div class="hr"></div>
-        <a class="btn btn-secondary" href="hurtownie.html">Otwórz Hurtownie</a>
-      </div>
-
-      <div class="card reveal d4">
-        <h3>Blueprints</h3>
-        <p>Gotowe schematy sprzedażowe, które wdrażasz od ręki.</p>
-        <div class="hr"></div>
-        <a class="btn" href="blueprints.html" data-elite-btn>Otwórz Blueprints</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ GLOBAL TOP z Hurtowni -->
-  <div class="section">
-    <div class="section-title reveal">
-      <h2>TOP produkty globalnie (ze wszystkich hurtowni)</h2>
-      <p>
-        To jest “co brać” z Twoich importów CSV. Jeśli tu jest pusto — wejdź w Hurtownie i wgraj CSV.
-      </p>
-    </div>
-
-    <div id="qmGlobalToast" class="note" style="display:none;margin-bottom:12px;"></div>
+    <div id="qmToast" class="note" style="display:none;margin-bottom:12px;"></div>
 
     <div class="card reveal d2">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
-        <input class="input" id="qmGlobalSearch" type="text" placeholder="Szukaj w globalnych produktach…" style="max-width:420px;">
-        <button class="btn btn-sm" type="button" id="qmGlobalExportCsv">Eksport CSV</button>
-        <button class="btn btn-sm btn-secondary" type="button" id="qmGlobalExportJson">Eksport JSON</button>
-        <button class="btn btn-sm btn-danger" type="button" id="qmGlobalClearDb">Wyczyść bazę hurtowni</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input class="input" id="qmSearch" placeholder="Szukaj po nazwie…" style="min-width:260px;">
+          <select class="input" id="qmSupplierFilter" style="min-width:220px;"></select>
+          <button class="btn btn-sm" type="button" id="qmReload">Odśwież</button>
+          <button class="btn btn-sm btn-danger" type="button" id="qmClearGlobal">Wyczyść bazę hurtowni</button>
+        </div>
+        <div class="muted-xs" id="qmMeta">—</div>
       </div>
 
-      <div id="qmGlobalStats" class="muted" style="margin-bottom:10px;"></div>
+      <div class="hr"></div>
 
-      <div class="table-wrap">
+      <div style="overflow:auto;">
         <table class="table" id="qmGlobalTable">
           <thead>
             <tr>
               <th>Produkt</th>
-              <th>Hurtownia</th>
-              <th>Cena hurtowa</th>
-              <th>Cena rynkowa</th>
-              <th>Marża %</th>
+              <th>Hurt</th>
+              <th>Rynek</th>
+              <th>Marża%</th>
               <th>Score</th>
-              <th data-private-col>Twoja cena</th>
-              <th data-private-col>Zysk</th>
+              <th>Hurtownia</th>
               <th>Akcja</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody id="qmGlobalTbody"></tbody>
         </table>
       </div>
 
-      <div class="note" style="margin-top:10px;">
-        Wybór per produkt: najlepszy <strong>score</strong>, a przy remisie niższa <strong>cena hurtowa</strong>.
-        <span style="color:#94a3b8;">Tryb prywatny: Ctrl+Shift+P • Ustaw marżę: Ctrl+Shift+M</span>
+      <div class="muted-xs" style="margin-top:10px;">
+        Tip: Jak masz 50k produktów, i tak renderuję max 500 na raz (żeby nie zabić przeglądarki).
       </div>
     </div>
   </div>
-
-  <div class="section">
-    <div class="section-title reveal">
-      <h2>Dostęp do panelu Webkul (SP Seller)</h2>
-      <p>BASIC nie ma panelu. PRO/ELITE mają — dlatego są droższe.</p>
-    </div>
-
-    <div class="grid-2">
-      <div class="card reveal d2">
-        <h3>Masz BASIC</h3>
-        <p class="p">
-          Masz podgląd i ograniczone moduły. Jeśli chcesz panel sprzedaży Webkul i pełen workflow —
-          przejdź na PRO/ELITE.
-        </p>
-        <div class="hr"></div>
-        <div class="hero-cta" style="margin:0;">
-          <a class="btn btn-primary" href="cennik.html">Zobacz plany</a>
-          <a class="btn" href="aktywuj-pro.html">Aktywuj PRO (demo)</a>
-        </div>
-      </div>
-
-      <div class="card reveal d3">
-        <h3>Masz PRO / ELITE</h3>
-        <p class="p">
-          Dostajesz dostęp do panelu Webkul (SP Seller) oraz pełne moduły QualitetMarket.
-          W demo widzisz flow i UI — docelowo tu będzie weryfikacja płatności.
-        </p>
-        <div class="hr"></div>
-        <div class="hero-cta" style="margin:0;">
-          <a class="btn btn-secondary" href="dashboard.html">Przejdź do Dashboard</a>
-          <a class="btn" href="intelligence.html" data-elite-btn>Start: Intelligence</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title reveal">
-      <h2>Najbliższy cel</h2>
-      <p>Żeby to zarabiało: wybierz 1 produkt i dowieź publikację + ruch.</p>
-    </div>
-
-    <div class="cards">
-      <div class="card reveal d2">
-        <h3>Krok 1: Wybór produktu</h3>
-        <p>Wchodzisz do Intelligence i oceniasz opłacalność.</p>
-      </div>
-      <div class="card reveal d3">
-        <h3>Krok 2: Dostawca</h3>
-        <p>W Hurtowniach wybierasz dostawcę i warunki.</p>
-      </div>
-      <div class="card reveal d4">
-        <h3>Krok 3: Blueprint</h3>
-        <p>Wdrażasz gotowy schemat sprzedaży i publikujesz.</p>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
-
-<!-- app.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
 
 <script>
   function logout() {
@@ -236,86 +126,24 @@
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
     document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
-
-    const plan = (localStorage.getItem("status") || "BASIC").toUpperCase();
-    const safePlan = (plan === "PRO" || plan === "ELITE") ? plan : "BASIC";
-    if (safePlan !== "ELITE") {
-      document.querySelectorAll("[data-elite-btn], [data-elite-link]").forEach(el => el.style.display = "none");
-    }
   })();
-
-  (function () {
-    const root = document.querySelector("[data-nav-root]");
-    const btn = document.querySelector("[data-nav-toggle]");
-    const links = document.querySelector("[data-nav-links]");
-    if (!root || !btn || !links) return;
-
-    const close = () => {
-      root.classList.remove("nav-open");
-      btn.setAttribute("aria-expanded", "false");
-    };
-    const toggle = () => {
-      const open = root.classList.toggle("nav-open");
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-    };
-
-    btn.addEventListener("click", toggle);
-    links.addEventListener("click", (e) => {
-      if (e.target.tagName === "A") close();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
-    });
-  })();
-</script>
-
-<!-- ✅ Global TOP + Private Margin + Send to Intelligence -->
-<script>
-(() => {
-  "use strict";
 
   const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
-  const LS_PRIVATE_MODE = "qm_private_mode_v1";    // "1" / "0"
-  const LS_MY_MARGIN_PCT = "qm_my_margin_pct_v1";  // np. "30"
-  const LS_INTEL_PREFILL = "qm_intel_prefill_v1";  // prefill dla Intelligence
+  const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
 
-  const $ = (sel) => document.querySelector(sel);
-  const els = {
-    toast: () => $("#qmGlobalToast"),
-    stats: () => $("#qmGlobalStats"),
-    search: () => $("#qmGlobalSearch"),
-    tbody: () => document.querySelector("#qmGlobalTable tbody"),
-    exportCsv: () => $("#qmGlobalExportCsv"),
-    exportJson: () => $("#qmGlobalExportJson"),
-    clearDb: () => $("#qmGlobalClearDb"),
-    privateHeaders: () => document.querySelectorAll("[data-private-col]"),
-  };
+  const MAX_RENDER = 500;
 
-  function isPrivateMode() {
-    return localStorage.getItem(LS_PRIVATE_MODE) === "1";
-  }
+  const $ = (s) => document.querySelector(s);
 
-  function getMyMarginPct() {
-    const raw = localStorage.getItem(LS_MY_MARGIN_PCT);
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : 30;
-  }
-
-  function setMyMarginPct(v) {
-    const n = Number(v);
-    if (!Number.isFinite(n) || n < 0 || n > 300) return false;
-    localStorage.setItem(LS_MY_MARGIN_PCT, String(n));
-    return true;
-  }
-
-  function showToast(msg, type="info") {
-    const box = els.toast();
+  function showToast(message, type="info"){
+    const box = $("#qmToast");
     if (!box) return;
     box.style.display = "";
-    box.textContent = msg;
+    box.textContent = message;
 
     box.style.border = "1px solid rgba(148,163,184,.25)";
     box.style.background = "rgba(148,163,184,.08)";
+
     if (type === "error") {
       box.style.border = "1px solid rgba(239,68,68,.35)";
       box.style.background = "rgba(239,68,68,.10)";
@@ -325,7 +153,7 @@
     }
 
     clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => box.style.display = "none", 2400);
+    showToast._t = setTimeout(()=> box.style.display="none", 2600);
   }
 
   function escapeHtml(s) {
@@ -337,21 +165,26 @@
       .replaceAll("'", "&#039;");
   }
 
-  function normName(s) {
-    return String(s || "")
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, " ")
-      .replace(/[^\p{L}\p{N} ]/gu, "");
-  }
-
-  function formatPLN(n) {
+  function formatPLN(n){
     const x = Number(n);
-    if (!Number.isFinite(x)) return "–";
+    if (!isFinite(x)) return "–";
     return x.toFixed(2) + " zł";
   }
 
-  function loadSuppliers() {
+  function getPlan(){
+    const p =
+      localStorage.getItem("plan") ||
+      localStorage.getItem("qm_plan") ||
+      localStorage.getItem("zsz_plan") ||
+      "";
+    return (p || "").toLowerCase();
+  }
+
+  function isElite(){
+    return getPlan() === "elite";
+  }
+
+  function loadProductsBySupplier(){
     try {
       const raw = localStorage.getItem(LS_PRODUCTS_BY_SUPPLIER);
       const list = raw ? JSON.parse(raw) : [];
@@ -361,309 +194,165 @@
     }
   }
 
-  function consolidateAll() {
-    const suppliers = loadSuppliers();
-    const map = new Map();
-    let total = 0;
-
-    for (const s of suppliers) {
-      const supplierName = s?.supplierName || "Hurtownia";
-      const products = Array.isArray(s?.products) ? s.products : [];
-      total += products.length;
-
+  function buildGlobalRows(suppliers){
+    // spłaszcz do listy produktów z supplierName
+    const out = [];
+    for (const sup of suppliers) {
+      const supplierName = sup?.supplierName || "Hurtownia";
+      const products = Array.isArray(sup?.products) ? sup.products : [];
       for (const p of products) {
-        const key = normName(p?.name);
-        if (!key) continue;
-
-        const item = {
-          name: p.name,
-          supplierName,
-          wholesale: p.wholesale,
-          retail: p.retail,
-          marginPct: p.marginPct,
-          score: p.score
-        };
-
-        const prev = map.get(key);
-        if (!prev) {
-          map.set(key, item);
-          continue;
-        }
-
-        const better =
-          (Number(item.score) > Number(prev.score)) ||
-          (Number(item.score) === Number(prev.score) && Number(item.wholesale) < Number(prev.wholesale));
-
-        if (better) map.set(key, item);
+        out.push({
+          name: p?.name || "",
+          wholesale: isFinite(Number(p?.wholesale)) ? Number(p.wholesale) : null,
+          retail: isFinite(Number(p?.retail)) ? Number(p.retail) : null,
+          marginPct: isFinite(Number(p?.marginPct)) ? Number(p.marginPct) : null,
+          score: isFinite(Number(p?.score)) ? Number(p.score) : 0,
+          supplierName
+        });
       }
     }
+    return out;
+  }
 
-    const unique = Array.from(map.values()).sort((a,b) =>
-      (Number(b.score) - Number(a.score)) || (Number(b.marginPct) - Number(a.marginPct))
+  function sortGlobal(rows){
+    return rows.sort((a,b)=>
+      (Number(b.score||0) - Number(a.score||0)) ||
+      (Number(b.marginPct||0) - Number(a.marginPct||0)) ||
+      (Number(b.retail||0) - Number(a.retail||0))
     );
-
-    return { suppliersCount: suppliers.length, total, unique };
   }
 
-  function calcMySellPrice(wholesale, myMarginPct) {
-    const w = Number(wholesale);
-    const m = Number(myMarginPct);
-    if (!Number.isFinite(w) || w <= 0) return NaN;
-    if (!Number.isFinite(m)) return NaN;
-    return w * (1 + m/100);
+  function renderSupplierFilter(suppliers){
+    const sel = $("#qmSupplierFilter");
+    if (!sel) return;
+
+    const names = suppliers.map(s => String(s?.supplierName || "Hurtownia")).filter(Boolean);
+    const uniq = Array.from(new Set(names)).sort((a,b)=> a.localeCompare(b, "pl"));
+
+    sel.innerHTML = `<option value="">Wszystkie hurtownie</option>` + uniq.map(n =>
+      `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`
+    ).join("");
   }
 
-  function calcMyProfit(mySellPrice, wholesale) {
-    const s = Number(mySellPrice);
-    const w = Number(wholesale);
-    if (!Number.isFinite(s) || !Number.isFinite(w)) return NaN;
-    return s - w;
-  }
-
-  function sendToIntelligence(product) {
-    const payload = {
-      name: product?.name || "",
-      supplierName: product?.supplierName || "",
-      wholesale: Number(product?.wholesale),
-      retail: Number(product?.retail),
-      score: Number(product?.score),
-      marginPct: Number(product?.marginPct),
-      myMarginPct: getMyMarginPct(),
-      ts: new Date().toISOString(),
-    };
-    localStorage.setItem(LS_INTEL_PREFILL, JSON.stringify(payload));
-    window.location.href = "intelligence.html";
-  }
-
-  function updatePrivateHeadersVisibility() {
-    const on = isPrivateMode();
-    els.privateHeaders()?.forEach(th => th.style.display = on ? "" : "none");
-  }
-
-  function renderTable(list) {
-    const tbody = els.tbody();
+  function renderTable(rows){
+    const tbody = $("#qmGlobalTbody");
     if (!tbody) return;
+
     tbody.innerHTML = "";
 
-    const privateMode = isPrivateMode();
-    const myMargin = getMyMarginPct();
+    const elite = isElite();
 
-    list.forEach((p, i) => {
+    rows.slice(0, MAX_RENDER).forEach((r, idx)=>{
       const tr = document.createElement("tr");
-      if (i < 10) tr.style.background = "rgba(34,197,94,.08)";
-
-      const mySell = calcMySellPrice(p.wholesale, myMargin);
-      const myProfit = calcMyProfit(mySell, p.wholesale);
+      if (idx < 10) tr.style.background = "rgba(34,197,94,.08)";
 
       tr.innerHTML = `
-        <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.supplierName)}</td>
-        <td>${formatPLN(p.wholesale)}</td>
-        <td>${formatPLN(p.retail)}</td>
-        <td>${Number.isFinite(Number(p.marginPct)) ? Number(p.marginPct).toFixed(2) + "%" : "–"}</td>
-        <td><strong>${Number.isFinite(Number(p.score)) ? Number(p.score) : "–"}</strong></td>
-        ${privateMode ? `
-          <td><strong>${formatPLN(mySell)}</strong></td>
-          <td>${formatPLN(myProfit)}</td>
-        ` : `
-          <td style="display:none;"></td>
-          <td style="display:none;"></td>
-        `}
+        <td>${escapeHtml(r.name)}</td>
+        <td>${formatPLN(r.wholesale)}</td>
+        <td>${formatPLN(r.retail)}</td>
+        <td>${isFinite(Number(r.marginPct)) ? Number(r.marginPct).toFixed(2) + "%" : "–"}</td>
+        <td><strong>${Math.round(Number(r.score||0))}</strong></td>
+        <td>${escapeHtml(r.supplierName)}</td>
         <td>
-          <button class="btn btn-sm btn-primary" type="button" data-intel>
+          <button class="btn btn-sm btn-primary"
+            data-action="intel"
+            data-idx="${idx}"
+            ${elite ? "" : "disabled title='Wymaga planu ELITE'"}>
             Wyślij do Intelligence
           </button>
         </td>
       `;
-
-      tr.querySelector("[data-intel]")?.addEventListener("click", () => sendToIntelligence(p));
       tbody.appendChild(tr);
     });
 
-    updatePrivateHeadersVisibility();
-  }
+    tbody.onclick = (e) => {
+      const btn = e.target.closest('button[data-action="intel"]');
+      if (!btn) return;
+      if (!isElite()) return;
 
-  function setStats({ suppliersCount, total, unique }) {
-    const box = els.stats();
-    if (!box) return;
+      const idx = Number(btn.getAttribute("data-idx"));
+      const row = rows[idx];
+      if (!row) return;
 
-    const privateMode = isPrivateMode();
-    const myMargin = getMyMarginPct();
+      localStorage.setItem(LS_INTEL_PREFILL, JSON.stringify({
+        name: row.name,
+        wholesale: row.wholesale,
+        retail: row.retail,
+        supplierName: row.supplierName,
+        score: row.score,
+        marginPct: row.marginPct
+      }));
 
-    box.innerHTML = `
-      Hurtownie w bazie: <strong>${suppliersCount}</strong> •
-      Produkty (łącznie): <strong>${total}</strong> •
-      Produkty (unikalne): <strong>${unique.length}</strong>
-      <span style="color:#94a3b8;">(TOP 10 podświetlone)</span>
-      ${privateMode ? `<span style="margin-left:10px;color:#94a3b8;">Tryb prywatny: <strong>ON</strong> • Twoja marża: <strong>${myMargin}%</strong></span>` : ``}
-    `;
-  }
-
-  function toCsv(headers, rows) {
-    const esc = (v) => {
-      const s = String(v ?? "");
-      if (/[",\n\r;]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
-      return s;
-    };
-    const sep = ";";
-    return [
-      headers.map(esc).join(sep),
-      ...rows.map((r) => r.map(esc).join(sep))
-    ].join("\n");
-  }
-
-  function downloadBlob(content, mime, filename) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 800);
-  }
-
-  function debounce(fn, wait=160) {
-    let t = null;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), wait);
+      window.location.href = "intelligence.html";
     };
   }
 
-  let GLOBAL = [];
+  function applyFiltersAndRender(){
+    const suppliers = loadProductsBySupplier();
+    renderSupplierFilter(suppliers);
 
-  function refresh() {
-    const data = consolidateAll();
-    GLOBAL = data.unique;
-    setStats(data);
-    renderTable(GLOBAL.slice(0, 50));
+    const all = sortGlobal(buildGlobalRows(suppliers));
 
-    if (!data.suppliersCount) {
-      showToast("Brak danych z Hurtowni. Wejdź w Hurtownie i wgraj CSV.", "error");
-    }
-  }
+    const q = String($("#qmSearch")?.value || "").trim().toLowerCase();
+    const sup = String($("#qmSupplierFilter")?.value || "").trim();
 
-  function applySearch() {
-    const q = String(els.search()?.value ?? "").trim().toLowerCase();
-    const list = q ? GLOBAL.filter(x => String(x.name).toLowerCase().includes(q)) : GLOBAL;
-    renderTable(list.slice(0, 50));
-  }
+    let filtered = all;
 
-  function togglePrivateMode() {
-    const next = isPrivateMode() ? "0" : "1";
-    localStorage.setItem(LS_PRIVATE_MODE, next);
+    if (sup) filtered = filtered.filter(x => String(x.supplierName) === sup);
+    if (q) filtered = filtered.filter(x => String(x.name||"").toLowerCase().includes(q));
 
-    if (next === "1") {
-      if (localStorage.getItem(LS_MY_MARGIN_PCT) == null) localStorage.setItem(LS_MY_MARGIN_PCT, "30");
-      showToast("Tryb prywatny: ON (Ctrl+Shift+P)", "success");
+    $("#qmMeta").textContent = `W bazie: ${all.length} • Widoczne: ${filtered.length} • Render: ${Math.min(filtered.length, MAX_RENDER)}`;
+
+    if (!suppliers.length) {
+      showToast("Brak danych z hurtowni. Wejdź w Hurtownie i zaimportuj CSV.", "error");
     } else {
-      showToast("Tryb prywatny: OFF (Ctrl+Shift+P)", "success");
+      showToast("Global TOP załadowany.", "success");
     }
-    refresh();
+
+    renderTable(filtered);
   }
 
-  function setMarginFlow() {
-    const current = getMyMarginPct();
-    const val = prompt("Ustaw Twoją marżę % (np. 30). Liczona od ceny hurtowej:", String(current));
-    if (val == null) return;
-    if (!setMyMarginPct(val)) return showToast("Błędna marża. Podaj liczbę 0–300.", "error");
-    showToast("Zapisano Twoją marżę.", "success");
-    refresh();
-  }
+  function bind(){
+    $("#qmReload")?.addEventListener("click", applyFiltersAndRender);
+    $("#qmSearch")?.addEventListener("input", () => applyFiltersAndRender());
+    $("#qmSupplierFilter")?.addEventListener("change", () => applyFiltersAndRender());
 
-  function bind() {
-    els.search()?.addEventListener("input", debounce(applySearch, 140));
-
-    els.exportCsv()?.addEventListener("click", () => {
-      if (!GLOBAL.length) return showToast("Brak danych do eksportu.", "error");
-
-      const privateMode = isPrivateMode();
-      const myMargin = getMyMarginPct();
-
-      const headers = privateMode
-        ? ["name","supplierName","wholesale","retail","marginPct","score","mySellPrice","myProfit","myMarginPct"]
-        : ["name","supplierName","wholesale","retail","marginPct","score"];
-
-      const rows = GLOBAL.map(x => {
-        if (!privateMode) {
-          return [
-            x.name,
-            x.supplierName,
-            Number.isFinite(Number(x.wholesale)) ? Number(x.wholesale).toFixed(2) : "",
-            Number.isFinite(Number(x.retail)) ? Number(x.retail).toFixed(2) : "",
-            Number.isFinite(Number(x.marginPct)) ? Number(x.marginPct).toFixed(2) : "",
-            x.score
-          ];
-        }
-        const mySell = calcMySellPrice(x.wholesale, myMargin);
-        const myProfit = calcMyProfit(mySell, x.wholesale);
-        return [
-          x.name,
-          x.supplierName,
-          Number.isFinite(Number(x.wholesale)) ? Number(x.wholesale).toFixed(2) : "",
-          Number.isFinite(Number(x.retail)) ? Number(x.retail).toFixed(2) : "",
-          Number.isFinite(Number(x.marginPct)) ? Number(x.marginPct).toFixed(2) : "",
-          x.score,
-          Number.isFinite(mySell) ? mySell.toFixed(2) : "",
-          Number.isFinite(myProfit) ? myProfit.toFixed(2) : "",
-          myMargin
-        ];
-      });
-
-      const csv = toCsv(headers, rows);
-      downloadBlob(csv, "text/csv;charset=utf-8", privateMode ? "qm-global-top-private.csv" : "qm-global-top.csv");
-      showToast("Wyeksportowano CSV.", "success");
-    });
-
-    els.exportJson()?.addEventListener("click", () => {
-      if (!GLOBAL.length) return showToast("Brak danych do eksportu.", "error");
-
-      const privateMode = isPrivateMode();
-      const myMargin = getMyMarginPct();
-
-      const out = privateMode
-        ? GLOBAL.map(x => {
-            const mySell = calcMySellPrice(x.wholesale, myMargin);
-            const myProfit = calcMyProfit(mySell, x.wholesale);
-            return { ...x, myMarginPct: myMargin, mySellPrice: mySell, myProfit };
-          })
-        : GLOBAL;
-
-      downloadBlob(JSON.stringify(out, null, 2), "application/json", privateMode ? "qm-global-top-private.json" : "qm-global-top.json");
-      showToast("Wyeksportowano JSON.", "success");
-    });
-
-    els.clearDb()?.addEventListener("click", () => {
+    $("#qmClearGlobal")?.addEventListener("click", () => {
       localStorage.removeItem(LS_PRODUCTS_BY_SUPPLIER);
-      GLOBAL = [];
-      renderTable([]);
-      setStats({ suppliersCount: 0, total: 0, unique: [] });
-      showToast("Wyczyszczono bazę hurtowni (produkty per hurtownia).", "success");
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (!e.ctrlKey || !e.shiftKey) return;
-      const k = String(e.key || "").toLowerCase();
-      if (k === "p") {
-        e.preventDefault();
-        togglePrivateMode();
-      }
-      if (k === "m") {
-        e.preventDefault();
-        setMarginFlow();
-      }
+      showToast("Wyczyszczono bazę hurtowni.", "success");
+      applyFiltersAndRender();
     });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    // domyślnie prywatny OFF + ukryj prywatne nagłówki
-    if (localStorage.getItem(LS_PRIVATE_MODE) == null) localStorage.setItem(LS_PRIVATE_MODE, "0");
-    updatePrivateHeadersVisibility();
-
     bind();
-    refresh();
+    applyFiltersAndRender();
+
+    // mobilne menu
+    (function () {
+      const root = document.querySelector("[data-nav-root]");
+      const btn = document.querySelector("[data-nav-toggle]");
+      const links = document.querySelector("[data-nav-links]");
+      if (!root || !btn || !links) return;
+
+      const close = () => {
+        root.classList.remove("nav-open");
+        btn.setAttribute("aria-expanded", "false");
+      };
+      const toggle = () => {
+        const open = root.classList.toggle("nav-open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+
+      btn.addEventListener("click", toggle);
+      links.addEventListener("click", (e) => {
+        if (e.target.tagName === "A") close();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") close();
+      });
+    })();
   });
-})();
 </script>
 
 </body>
