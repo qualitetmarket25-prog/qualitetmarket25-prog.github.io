@@ -4,35 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hurtownie – Zarabianie u Szefa</title>
+
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="/icons/icon-192.png">
 
-  <!-- planGuard fallback: /js/ oraz root -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f14">
 
-  <!-- hurtownie.js fallback: /js/ oraz root -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/hurtownie.js", () => tryLoad("hurtownie.js"));
-    })();
-  </script>
+  <!-- Guard + App + Hurtownie (ROOT) -->
+  <script src="/planGuard.js" defer></script>
+  <script src="/app.js" defer></script>
+  <script src="/hurtownie.js" defer></script>
 </head>
 
 <body>
@@ -91,9 +74,14 @@
     <div class="grid-2">
       <div class="card reveal d2">
         <h3 style="margin:0 0 10px;">Plik CSV</h3>
+
+        <!-- Opcjonalnie: nazwa hurtowni (jeśli chcesz ranking po nazwie) -->
+        <input class="input" type="text" id="supplierName" placeholder="Nazwa hurtowni (opcjonalnie)" style="margin-bottom:10px;">
+
         <input class="input" type="file" id="csvFile" accept=".csv">
         <div style="height:10px"></div>
         <button class="btn btn-primary" type="button" onclick="processCSV()">Analizuj hurtownię</button>
+
         <div class="hr"></div>
         <div id="supplierSummary" class="muted"></div>
       </div>
@@ -103,7 +91,7 @@
         <div id="supplierRanking" class="muted"></div>
         <div class="hr"></div>
         <div class="note">
-          Tip: im więcej hurtowni wrzucisz (osobne CSV), tym lepszy ranking i decyzja “co brać”.
+          Tip: wrzucaj różne CSV (osobne hurtownie) — ranking zrobi Ci selekcję “co brać”.
         </div>
       </div>
     </div>
@@ -136,20 +124,6 @@
 </div>
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
-
-<!-- assets/app.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
 
 <script>
   // mobilne menu (hamburger)
