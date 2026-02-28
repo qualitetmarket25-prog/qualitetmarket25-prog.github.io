@@ -1,20 +1,17 @@
 // js/planGuard.js
-// Guard v3 — QualitetMarket / Zarabianie u Szefa (GitHub Pages)
-// - canonical plan key: qm_plan_v1 = "basic" | "pro" | "elite"
-// - backward compat: status = "BASIC" | "PRO" | "ELITE"
-// - optional expiry: plan_expires_at (ISO string)
-// - page guard: <body data-require="pro|elite|login">
-// - UX lock: disables elements requiring elite via [data-require-btn="elite"] or [data-require="elite"]
+// Guard v4 — QualitetMarket / Zarabianie u Szefa (GitHub Pages)
+// SOURCE OF TRUTH: qm_plan = "basic" | "pro" | "elite"
+// Compat: qm_plan_v1 (JSON "pro"), status = "BASIC|PRO|ELITE", plan = "PRO|ELITE|BASIC"
+// Expiry: plan_expires_at (ISO)
+// Page guard: <body data-require="pro|elite|login">
+// UX lock: [data-require-btn], [data-require] on elements (excluding <body>)
 (function () {
   "use strict";
 
   // ---------- helpers ----------
-  const safeJsonParse = (v, fallback) => {
-    try { return JSON.parse(v); } catch { return fallback; }
-  };
-
+  const safeJsonParse = (v, fallback) => { try { return JSON.parse(v); } catch { return fallback; } };
   const upper = (s) => String(s || "").toUpperCase();
-  const lower = (s) => String(s || "").toLowerCase();
+  const lower = (s) => String(s || "").toLowerCase().trim();
 
   const planRank = (p) => {
     p = lower(p);
@@ -23,30 +20,62 @@
     return 0; // basic/unknown
   };
 
-  // ---------- plan storage (canonical + compat) ----------
-  function readPlanCanonical() {
-    // canonical: qm_plan_v1 stored sometimes as JSON string ("pro") or raw string
-    const raw = localStorage.getItem("qm_plan_v1");
-    const v = safeJsonParse(raw, raw);
-    const p = lower(v || "");
-    if (p === "pro" || p === "elite" || p === "basic") return p;
-    return null;
+  function normalizePlan(raw) {
+    const p = lower(raw);
+    if (p === "elite") return "elite";
+    if (p === "pro" || p === "premium") return "pro";
+    if (p === "basic" || p === "free" || p === "guest" || !p) return "basic";
+
+    // tolerate uppercase legacy inputs
+    const u = upper(raw);
+    if (u === "ELITE") return "elite";
+    if (u === "PRO") return "pro";
+    if (u === "BASIC") return "basic";
+
+    return "basic";
   }
 
-  function readPlanLegacy() {
-    // legacy: status = BASIC/PRO/ELITE
-    const s = upper(localStorage.getItem("status"));
-    if (s === "PRO") return "pro";
-    if (s === "ELITE") return "elite";
-    if (s === "BASIC") return "basic";
-    return null;
+  // ---------- read plan from multiple keys (prefer qm_plan) ----------
+  function readPlanAny() {
+    // 1) canonical: qm_plan (raw string)
+    const qmPlan = localStorage.getItem("qm_plan");
+    if (qmPlan) return normalizePlan(qmPlan);
+
+    // 2) canonical v1: qm_plan_v1 (sometimes JSON)
+    const rawV1 = localStorage.getItem("qm_plan_v1");
+    const v1 = safeJsonParse(rawV1, rawV1);
+    if (v1) return normalizePlan(v1);
+
+    // 3) legacy: status BASIC/PRO/ELITE
+    const status = localStorage.getItem("status");
+    if (status) return normalizePlan(status);
+
+    // 4) other legacy keys
+    const plan = localStorage.getItem("plan");
+    if (plan) return normalizePlan(plan);
+
+    return "basic";
   }
 
-  function writePlan(p) {
-    p = lower(p);
-    if (p !== "basic" && p !== "pro" && p !== "elite") p = "basic";
+  // ---------- write plan to all keys (sync) ----------
+  function writePlanAll(p) {
+    p = normalizePlan(p);
+
+    // source of truth
+    localStorage.setItem("qm_plan", p);
+
+    // v1 compat
     localStorage.setItem("qm_plan_v1", JSON.stringify(p));
-    localStorage.setItem("status", upper(p)); // keep compat for older pages
+
+    // legacy compat (uppercase)
+    localStorage.setItem("status", upper(p));
+    localStorage.setItem("plan", upper(p));
+
+    // legacy pro flag used in some pages
+    if (p === "pro" || p === "elite") localStorage.setItem("proStatus", "true");
+    else localStorage.removeItem("proStatus");
+
+    return p;
   }
 
   // ---------- expiry ----------
@@ -55,24 +84,18 @@
     if (!expiresAt) return;
 
     const exp = new Date(expiresAt);
-    if (Number.isNaN(exp.getTime())) return; // invalid date -> ignore
+    if (Number.isNaN(exp.getTime())) return;
 
-    const now = new Date();
-    if (now > exp) {
-      // expire -> downgrade
+    if (new Date() > exp) {
       localStorage.removeItem("plan_expires_at");
-      writePlan("basic");
+      writePlanAll("basic");
     }
   }
 
   // ---------- resolve current plan ----------
   enforceExpiry();
-
-  let plan = readPlanCanonical() || readPlanLegacy() || "basic";
-
-  // normalize + sync both storages to avoid split-brain
-  writePlan(plan);
-  plan = readPlanCanonical() || "basic";
+  let plan = readPlanAny();
+  plan = writePlanAll(plan); // normalize + sync to avoid split-brain
 
   // ---------- auth ----------
   const isLogged = localStorage.getItem("is_logged_in") === "true";
@@ -85,55 +108,27 @@
     return;
   }
 
-  if (requireType === "pro") {
-    if (planRank(plan) < planRank("pro")) {
-      window.location.href = "./cennik.html";
-      return;
-    }
+  if (requireType === "pro" && planRank(plan) < planRank("pro")) {
+    window.location.href = "./cennik.html";
+    return;
   }
 
-  if (requireType === "elite") {
-    if (planRank(plan) < planRank("elite")) {
-      window.location.href = "./cennik.html";
-      return;
-    }
+  if (requireType === "elite" && planRank(plan) < planRank("elite")) {
+    window.location.href = "./cennik.html";
+    return;
   }
 
-  // ---------- UX lock: disable non-allowed controls ----------
-  // Supports:
-  // 1) data-require-btn="elite|pro|login"
-  // 2) data-require="elite|pro" on buttons/links/sections
-  function disableIfNotAllowed(el, need) {
-    need = lower(need);
-    if (!need) return;
-
-    // login requirement on element (optional)
-    if (need === "login" && !isLogged) {
-      lock(el, "Wymaga logowania");
-      return;
-    }
-
-    if (need === "pro" && planRank(plan) < planRank("pro")) {
-      lock(el, "Wymaga planu PRO");
-      return;
-    }
-
-    if (need === "elite" && planRank(plan) < planRank("elite")) {
-      lock(el, "Wymaga planu ELITE");
-      return;
-    }
-  }
-
+  // ---------- UX lock ----------
   function lock(el, reason) {
-    // Buttons
-    if (el.tagName === "BUTTON" || el.getAttribute("role") === "button" || el.hasAttribute("data-action")) {
+    // Buttons / inputs
+    if (el.tagName === "BUTTON" || el.matches("input,select,textarea") || el.getAttribute("role") === "button" || el.hasAttribute("data-action")) {
       el.disabled = true;
       el.classList.add("is-disabled");
       el.title = reason;
       return;
     }
 
-    // Links: prevent navigation
+    // Links
     if (el.tagName === "A") {
       el.classList.add("is-disabled");
       el.setAttribute("aria-disabled", "true");
@@ -145,37 +140,47 @@
       return;
     }
 
-    // Generic elements: visually dim + block pointer
+    // Generic
     el.classList.add("is-disabled");
     el.style.pointerEvents = "none";
     el.style.opacity = "0.55";
     el.title = reason;
   }
 
-  // scan on DOMContentLoaded (works even if script is in <head>)
+  function disableIfNotAllowed(el, need) {
+    need = lower(need);
+    if (!need) return;
+
+    if (need === "login" && !isLogged) return lock(el, "Wymaga logowania");
+    if (need === "pro" && planRank(plan) < planRank("pro")) return lock(el, "Wymaga planu PRO");
+    if (need === "elite" && planRank(plan) < planRank("elite")) return lock(el, "Wymaga planu ELITE");
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    // badge (optional)
     const badge = document.getElementById("planBadge");
     if (badge) badge.textContent = `PLAN: ${upper(plan)}`;
 
-    // apply auth-only / guest-only if used
     document.querySelectorAll("[data-guest-only]").forEach(el => (el.style.display = isLogged ? "none" : ""));
     document.querySelectorAll("[data-auth-only]").forEach(el => (el.style.display = isLogged ? "" : "none"));
 
-    // disable elements by required plan
     document.querySelectorAll("[data-require-btn]").forEach(el => disableIfNotAllowed(el, el.getAttribute("data-require-btn")));
     document.querySelectorAll("[data-require]").forEach(el => {
-      // don't treat <body data-require> again
       if (el === document.body) return;
       disableIfNotAllowed(el, el.getAttribute("data-require"));
     });
   });
 
-  // expose minimal debug API
+  // debug API
   window.QM_GUARD = {
-    plan,
+    get plan() { return plan; },
     isLogged,
-    setPlan: (p) => writePlan(p),
-    expire: () => { localStorage.setItem("plan_expires_at", new Date(Date.now() - 1000).toISOString()); enforceExpiry(); }
+    setPlan: (p) => { plan = writePlanAll(p); return plan; },
+    expire: () => {
+      localStorage.setItem("plan_expires_at", new Date(Date.now() - 1000).toISOString());
+      enforceExpiry();
+      plan = readPlanAny();
+      plan = writePlanAll(plan);
+      return plan;
+    }
   };
 })();
