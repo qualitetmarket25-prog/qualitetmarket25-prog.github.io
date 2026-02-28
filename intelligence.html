@@ -232,7 +232,6 @@
     window.location.href = "login.html";
   }
 
-  // CTA w nav: guest vs logged
   (function () {
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
@@ -312,7 +311,6 @@
     document.getElementById("outReco").textContent = reco;
     document.getElementById("outWhy").textContent = why;
 
-    // ✅ AUTO AUDYT (nie blokuje, tylko informuje)
     const warn = [];
     if (profit > 0 && profit < 20) warn.push("Profit < 20 zł (słaba poduszka).");
     if (profit <= 0) warn.push("Profit ≤ 0 (nieopłacalne).");
@@ -335,7 +333,6 @@
     setAudit("—");
   }
 
-  // ✅ GLOBAL COST PRESET (PRIVATE) — Ctrl+Shift+K
   (function setupGlobalCosts(){
     const LS_COST_PRESET = "qm_cost_preset_v1";
 
@@ -403,12 +400,9 @@
     });
 
     document.addEventListener("DOMContentLoaded", () => applyPreset(false));
-
-    // expose for prefill
     window.qmApplyPreset = applyPreset;
   })();
 
-  // ✅ PREFILL z QualitetMarket → Intelligence
   (function prefillFromQualitetMarket(){
     const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
 
@@ -418,9 +412,8 @@
       payload = raw ? JSON.parse(raw) : null;
     } catch { payload = null; }
 
-    if (!payload || !payload.name) return;
+    if (!payload || (!payload.name && !Number.isFinite(Number(payload.wholesale)) && !Number.isFinite(Number(payload.retail)))) return;
 
-    // wypełnij pola
     const pName = document.getElementById("pName");
     const buy   = document.getElementById("buy");
     const sell  = document.getElementById("sell");
@@ -429,26 +422,21 @@
     if (buy && Number.isFinite(Number(payload.wholesale))) buy.value = Number(payload.wholesale).toFixed(2);
     if (sell && Number.isFinite(Number(payload.retail))) sell.value = Number(payload.retail).toFixed(2);
 
-    // zastosuj preset kosztów (jeśli ustawiony)
     try { window.qmApplyPreset && window.qmApplyPreset(false); } catch {}
 
-    // jeśli nadal puste — ustaw 0
     ["ship","fee","ads","risk"].forEach(id => {
       const el = document.getElementById(id);
       if (el && (el.value === "" || el.value == null)) el.value = "0";
     });
 
-    // policz
     try { calc(); } catch {}
 
     const sup = payload.supplierName ? ` • Hurtownia: ${payload.supplierName}` : "";
     showToast(`Zaciągnięto produkt z QualitetMarket${sup}.`, "success");
 
-    // wyczyść, żeby nie prefillowało w kółko
     localStorage.removeItem(LS_INTEL_PREFILL);
   })();
 
-  // ✅ Kopiuj wynik do schowka (listing / notatki)
   (function bindCopy(){
     const btn = document.getElementById("qmCopyResultBtn");
     if (!btn) return;
@@ -478,7 +466,6 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
-  // ✅ Ustaw cenę sprzedaży pod target (marża% lub profit zł)
   (function bindTarget(){
     const btn = document.getElementById("qmTargetPriceBtn");
     if (!btn) return;
@@ -505,11 +492,8 @@ Score: ${Math.round(res.score)}`;
       let sell = 0;
 
       if (type === "P") {
-        // target profit zł: sell = cost + profit
         sell = cost + val;
       } else {
-        // target margin%: margin = (sell - cost)/sell
-        // => sell = cost / (1 - margin)
         const target = val / 100;
         if (target >= 0.95) return showToast("Marża% za wysoka (>=95%).", "error");
         sell = cost / (1 - target);
@@ -523,7 +507,6 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
-  // mobilne menu (hamburger)
   (function () {
     const root = document.querySelector("[data-nav-root]");
     const btn = document.querySelector("[data-nav-toggle]");
