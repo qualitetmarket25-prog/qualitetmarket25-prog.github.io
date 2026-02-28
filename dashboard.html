@@ -2,11 +2,11 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Dashboard – Zarabianie u Szefa</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – QualitetMarket CRM</title>
+  <link rel="stylesheet" href="styles.css" />
 
-  <!-- ładowanie planGuard z 2 ścieżek (u Ciebie bywa w /js albo w root) -->
+  <!-- planGuard fallback -->
   <script>
     (function () {
       const tryLoad = (src, next) => {
@@ -19,15 +19,32 @@
       tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
     })();
   </script>
+
+  <style>
+    .grid-3x { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
+    @media (max-width: 980px){ .grid-3x{ grid-template-columns: 1fr; } }
+    .tag { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid rgba(148,163,184,.25); background: rgba(148,163,184,.08); font-size:12px; color:#cbd5e1;}
+    .tag .dot { width:8px;height:8px;border-radius:999px; display:inline-block; background: rgba(148,163,184,.8); }
+    .dot.todo{ background: rgba(250,204,21,.9); }
+    .dot.listed{ background: rgba(59,130,246,.9); }
+    .dot.sold{ background: rgba(34,197,94,.9); }
+    .dot.drop{ background: rgba(239,68,68,.9); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+    .row-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .small { font-size: 12px; color:#94a3b8; }
+    textarea.input { min-height: 90px; resize: vertical; }
+    .kpi strong{ font-size: 18px; }
+    .table td { vertical-align: top; }
+  </style>
 </head>
 
-<body data-require="login">
+<body data-require="pro">
 
 <div class="nav" data-nav-root>
   <div class="nav-inner">
     <div class="brand">
       <div class="logo"></div>
-      <div class="brand-title">Zarabianie u Szefa</div>
+      <div class="brand-title">QualitetMarket</div>
       <span id="planBadge" class="plan-badge"></span>
     </div>
 
@@ -39,14 +56,17 @@
       <a href="index.html">Start</a>
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html" data-elite-link>Intelligence</a>
-      <a href="blueprints.html" data-elite-link>Blueprints</a>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="listing.html">Listing</a>
+      <a class="active" href="dashboard.html" data-auth-only>Dashboard</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a class="active" href="dashboard.html">Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <button class="btn btn-sm btn-danger nav-logout" type="button" onclick="logout()">Wyloguj</button>
+      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+
+      <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
   </div>
 </div>
@@ -54,132 +74,598 @@
 <div class="wrap">
 
   <div class="hero-card reveal">
-    <span class="badge"><span class="dot"></span> Panel Sterowania</span>
+    <span class="badge"><span class="dot"></span> QualitetMarket • CRM</span>
     <div class="h1">Dashboard</div>
-    <div class="p">Centrum kontroli Twojego systemu sprzedażowego.</div>
-
-    <div class="grid-3">
-      <div class="kpi reveal d2">
-        <div>
-          <strong>Plan</strong>
-          <div class="muted-xs">Aktywny dostęp</div>
-        </div>
-        <span id="currentPlan">BASIC</span>
-      </div>
-
-      <div class="kpi reveal d3">
-        <div>
-          <strong>Moduły</strong>
-          <div class="muted-xs">Dostępne funkcje</div>
-        </div>
-        <span id="moduleAccess">Ograniczone</span>
-      </div>
-
-      <div class="kpi reveal d4">
-        <div>
-          <strong>Status</strong>
-          <div class="muted-xs">System</div>
-        </div>
-        <span>Aktywny</span>
-      </div>
-    </div>
+    <div class="p">Twoje produkty w statusach: do wystawienia → wystawione → sprzedane. Zero chaosu, więcej kasy.</div>
 
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-primary" href="qualitetmarket.html">QualitetMarket</a>
-      <a class="btn" href="intelligence.html" data-elite-btn>Intelligence</a>
-      <a class="btn" href="blueprints.html" data-elite-btn>Blueprints</a>
-      <a class="btn btn-secondary" href="hurtownie.html" id="hurtownieBtn">System Hurtowni</a>
-      <a class="btn" href="cennik.html">Upgrade planu</a>
+      <a class="btn btn-secondary" href="qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="intelligence.html">Intelligence</a>
+      <a class="btn" href="listing.html">Listing</a>
+      <button class="btn btn-primary" id="btnNew" type="button">+ Dodaj pozycję</button>
+      <button class="btn btn-danger" id="btnWipe" type="button">Wyczyść CRM</button>
     </div>
+
+    <div class="hr"></div>
+    <div id="toast" class="note" style="display:none;"></div>
   </div>
 
   <div class="section">
     <div class="section-title reveal">
-      <h2>Twoje następne kroki</h2>
-      <p>Produkt → Marża → Dostawca → Ruch → Sprzedaż.</p>
+      <h2>Panel</h2>
+      <p>Tu ma być prosto: zapisujesz, ustawiasz status, i sprzedajesz.</p>
     </div>
 
-    <div class="cards">
-      <div class="card reveal d2">
-        <h3>1) Intelligence</h3>
-        <p>Sprawdź scoring i marżę produktu.</p>
+    <div class="grid-3x">
+      <div class="card soft">
+        <div class="kpi">
+          <div>
+            <strong>Do wystawienia</strong>
+            <div class="small">pipeline</div>
+          </div>
+          <span id="kTodo">—</span>
+        </div>
       </div>
 
-      <div class="card reveal d3">
-        <h3>2) Hurtownie</h3>
-        <p>Wczytaj CSV dostawcy i oceń opłacalność.</p>
+      <div class="card soft">
+        <div class="kpi">
+          <div>
+            <strong>Wystawione</strong>
+            <div class="small">aktywnie</div>
+          </div>
+          <span id="kListed">—</span>
+        </div>
       </div>
 
-      <div class="card reveal d4">
-        <h3>3) Blueprint</h3>
-        <p>Wdrażaj gotowe schematy sprzedażowe.</p>
+      <div class="card soft">
+        <div class="kpi">
+          <div>
+            <strong>Zysk (sprzedane)</strong>
+            <div class="small">suma</div>
+          </div>
+          <span id="kProfit">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card reveal d2">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input class="input" id="q" placeholder="Szukaj po nazwie…" style="min-width:260px;">
+          <select class="input" id="status" style="min-width:220px;">
+            <option value="">Wszystkie statusy</option>
+            <option value="todo">Do wystawienia</option>
+            <option value="listed">Wystawione</option>
+            <option value="sold">Sprzedane</option>
+            <option value="drop">Odrzucone</option>
+          </select>
+          <select class="input" id="channel" style="min-width:220px;">
+            <option value="">Wszystkie kanały</option>
+            <option value="allegro">Allegro</option>
+            <option value="olx">OLX</option>
+            <option value="fb">Facebook</option>
+            <option value="vinted">Vinted</option>
+            <option value="inne">Inne</option>
+          </select>
+          <button class="btn btn-sm" id="btnReload" type="button">Odśwież</button>
+          <button class="btn btn-sm btn-secondary" id="btnExport" type="button">Eksport JSON</button>
+        </div>
+        <div class="muted-xs" id="meta">—</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div style="overflow:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Produkt</th>
+              <th>Finanse</th>
+              <th>Status</th>
+              <th>Link / Notatki</th>
+              <th>Akcje</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
+</div>
 
+<!-- Modal (prosty) -->
+<div id="modal" style="display:none; position:fixed; inset:0; background: rgba(0,0,0,.55); padding: 18px; overflow:auto; z-index: 9999;">
+  <div class="card" style="max-width: 980px; margin: 0 auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <h3 style="margin:0;">Pozycja CRM</h3>
+      <button class="btn btn-sm btn-danger" id="mClose" type="button">Zamknij</button>
+    </div>
+
+    <div class="hr"></div>
+
+    <div id="mToast" class="note" style="display:none;margin-bottom:12px;"></div>
+
+    <div class="grid-2">
+      <div>
+        <label class="label">Nazwa produktu</label>
+        <input class="input" id="mName" placeholder="np. Etui do iPhone 15" />
+      </div>
+      <div>
+        <label class="label">Hurtownia (opcjonalnie)</label>
+        <input class="input" id="mSupplier" placeholder="np. ABC Hurt" />
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="grid-2">
+      <div>
+        <label class="label">Cena zakupu (hurt)</label>
+        <input class="input" id="mBuy" type="number" step="0.01" placeholder="19.90" />
+      </div>
+      <div>
+        <label class="label">Cena docelowa / wystawienia</label>
+        <input class="input" id="mPrice" type="number" step="0.01" placeholder="59.90" />
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="grid-2">
+      <div>
+        <label class="label">Kanał</label>
+        <select class="input" id="mChannel">
+          <option value="allegro">Allegro</option>
+          <option value="olx">OLX</option>
+          <option value="fb">Facebook</option>
+          <option value="vinted">Vinted</option>
+          <option value="inne">Inne</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Status</label>
+        <select class="input" id="mStatus">
+          <option value="todo">Do wystawienia</option>
+          <option value="listed">Wystawione</option>
+          <option value="sold">Sprzedane</option>
+          <option value="drop">Odrzucone</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="grid-2">
+      <div>
+        <label class="label">Link do ogłoszenia (opcjonalnie)</label>
+        <input class="input" id="mLink" placeholder="wklej URL" />
+      </div>
+      <div>
+        <label class="label">Cena sprzedaży (tylko jeśli sprzedane)</label>
+        <input class="input" id="mSoldPrice" type="number" step="0.01" placeholder="np. 59.90" />
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <label class="label">Notatki / follow-up</label>
+    <textarea class="input" id="mNotes" placeholder="np. odpisać jutro, dorzucić zdjęcia, obniżyć cenę o 5 zł"></textarea>
+
+    <div class="hr"></div>
+
+    <div class="hero-cta" style="margin:0;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="mSave" type="button">Zapisz</button>
+      <button class="btn btn-secondary" id="mFromIntel" type="button">Zaciągnij z Intelligence</button>
+      <button class="btn" id="mFromListing" type="button">Zaciągnij z Listing</button>
+    </div>
+  </div>
 </div>
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<!-- U Ciebie app.js jest w ROOT repo (na screenie), więc ładujemy z root -->
-<script src="app.js"></script>
-
 <script>
-  // logout (demo)
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    // opcjonalnie: nie kasuję planu, tylko sesję
     window.location.href = "login.html";
   }
 
-  // Ustaw KPI + lekkie UX (ukryj ELITE rzeczy jeśli nie ELITE)
   (function () {
-    const plan = (localStorage.getItem("status") || "BASIC").toUpperCase();
-    const safePlan = (plan === "PRO" || plan === "ELITE") ? plan : "BASIC";
-
-    const currentPlanEl = document.getElementById("currentPlan");
-    if (currentPlanEl) currentPlanEl.textContent = safePlan;
-
-    const moduleEl = document.getElementById("moduleAccess");
-    if (moduleEl) {
-      if (safePlan === "ELITE") moduleEl.textContent = "Pełne (ELITE)";
-      else if (safePlan === "PRO") moduleEl.textContent = "Rozszerzone (PRO)";
-      else moduleEl.textContent = "Ograniczone (BASIC)";
-    }
-
-    // Jeśli nie ELITE, chowamy linki/przyciski ELITE w dashboardzie (planGuard też je schowa w nav,
-    // ale tu dodatkowo chowamy CTA i linki)
-    if (safePlan !== "ELITE") {
-      document.querySelectorAll("[data-elite-btn], [data-elite-link]").forEach(el => el.style.display = "none");
-    }
+    const logged = localStorage.getItem("is_logged_in") === "true";
+    document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
+    document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
   })();
 
-  // mobilne menu (hamburger)
-  (function () {
-    const root = document.querySelector("[data-nav-root]");
-    const btn = document.querySelector("[data-nav-toggle]");
-    const links = document.querySelector("[data-nav-links]");
-    if (!root || !btn || !links) return;
+  // ===== Storage keys =====
+  const LS_CRM = "qm_crm_v1";
+  const LS_INTEL = "qm_intel_prefill_v1";
+  const LS_LISTING = "qm_listing_prefill_v1";
 
-    const close = () => {
-      root.classList.remove("nav-open");
-      btn.setAttribute("aria-expanded", "false");
-    };
-    const toggle = () => {
-      const open = root.classList.toggle("nav-open");
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-    };
+  const $ = (s) => document.querySelector(s);
+  const n = (v) => { v = Number(v); return isFinite(v) ? v : 0; };
+  const money = (x) => (Math.round(n(x)*100)/100).toFixed(2) + " zł";
 
-    btn.addEventListener("click", toggle);
-    links.addEventListener("click", (e) => {
-      if (e.target.tagName === "A") close();
+  function toast(msg, type="info"){
+    const t = $("#toast");
+    if (!t) return;
+    t.style.display = "";
+    t.textContent = msg;
+
+    t.style.border = "1px solid rgba(148,163,184,.25)";
+    t.style.background = "rgba(148,163,184,.08)";
+    if (type === "error") { t.style.border = "1px solid rgba(239,68,68,.35)"; t.style.background="rgba(239,68,68,.10)"; }
+    if (type === "success") { t.style.border = "1px solid rgba(34,197,94,.30)"; t.style.background="rgba(34,197,94,.10)"; }
+
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> t.style.display="none", 2600);
+  }
+
+  function mToast(msg, type="info"){
+    const t = $("#mToast");
+    if (!t) return;
+    t.style.display = "";
+    t.textContent = msg;
+
+    t.style.border = "1px solid rgba(148,163,184,.25)";
+    t.style.background = "rgba(148,163,184,.08)";
+    if (type === "error") { t.style.border = "1px solid rgba(239,68,68,.35)"; t.style.background="rgba(239,68,68,.10)"; }
+    if (type === "success") { t.style.border = "1px solid rgba(34,197,94,.30)"; t.style.background="rgba(34,197,94,.10)"; }
+
+    clearTimeout(mToast._t);
+    mToast._t = setTimeout(()=> t.style.display="none", 2600);
+  }
+
+  function loadCRM(){
+    try {
+      const raw = localStorage.getItem(LS_CRM);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+
+  function saveCRM(list){
+    localStorage.setItem(LS_CRM, JSON.stringify(list));
+  }
+
+  function uid(){
+    return "i_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+  }
+
+  function statusLabel(s){
+    if (s === "todo") return { t: "Do wystawienia", dot: "todo" };
+    if (s === "listed") return { t: "Wystawione", dot: "listed" };
+    if (s === "sold") return { t: "Sprzedane", dot: "sold" };
+    return { t: "Odrzucone", dot: "drop" };
+  }
+
+  function calcProfit(item){
+    // profit = soldPrice - buy (bez kosztów; koszty są w Intelligence)
+    const buy = n(item.buy);
+    const sold = n(item.soldPrice);
+    if (!sold) return 0;
+    return sold - buy;
+  }
+
+  function updateKpis(list){
+    const todo = list.filter(x=> x.status === "todo").length;
+    const listed = list.filter(x=> x.status === "listed").length;
+    const profit = list.filter(x=> x.status === "sold").reduce((a,x)=> a + calcProfit(x), 0);
+
+    $("#kTodo").textContent = String(todo);
+    $("#kListed").textContent = String(listed);
+    $("#kProfit").textContent = money(profit);
+  }
+
+  function getFilters(){
+    return {
+      q: String($("#q").value || "").trim().toLowerCase(),
+      status: String($("#status").value || "").trim(),
+      channel: String($("#channel").value || "").trim()
+    };
+  }
+
+  function applyFilters(list){
+    const f = getFilters();
+    let out = [...list];
+
+    if (f.status) out = out.filter(x => x.status === f.status);
+    if (f.channel) out = out.filter(x => x.channel === f.channel);
+    if (f.q) out = out.filter(x => String(x.name||"").toLowerCase().includes(f.q));
+
+    // sort: status priority + newest
+    const pr = { todo: 0, listed: 1, sold: 2, drop: 3 };
+    out.sort((a,b)=>
+      (pr[a.status] - pr[b.status]) ||
+      (Number(b.ts||0) - Number(a.ts||0))
+    );
+
+    $("#meta").textContent = `Wszystkie: ${list.length} • Widoczne: ${out.length}`;
+    return out;
+  }
+
+  function render(){
+    const list = loadCRM();
+    updateKpis(list);
+
+    const filtered = applyFilters(list);
+    const tbody = $("#tbody");
+    tbody.innerHTML = "";
+
+    if (!filtered.length){
+      tbody.innerHTML = `<tr><td colspan="5" class="muted-xs">Brak pozycji. Kliknij “+ Dodaj pozycję”.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach(item=>{
+      const st = statusLabel(item.status);
+      const profit = calcProfit(item);
+
+      const fin =
+`Buy: ${money(item.buy)}
+Price: ${money(item.price)}
+${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + money(profit)) : ""}`.trim();
+
+      const link = item.link ? `<a href="${item.link}" target="_blank" rel="noopener">otwórz</a>` : "—";
+      const notes = item.notes ? `<div class="small">${escapeHtml(item.notes).slice(0,220)}${item.notes.length>220?"…":""}</div>` : `<span class="muted-xs">—</span>`;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <div><strong>${escapeHtml(item.name||"—")}</strong></div>
+          <div class="small">Kanał: ${escapeHtml(item.channel||"—")} • Hurtownia: ${escapeHtml(item.supplier||"—")}</div>
+        </td>
+        <td class="mono" style="white-space:pre-line;">${escapeHtml(fin)}</td>
+        <td>
+          <span class="tag"><span class="dot ${st.dot}"></span>${st.t}</span>
+          <div class="small">Dodano: ${new Date(item.ts||Date.now()).toLocaleString("pl-PL")}</div>
+        </td>
+        <td>
+          <div class="small">Link: ${link}</div>
+          ${notes}
+        </td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-sm btn-primary" data-act="edit" data-id="${item.id}">Edytuj</button>
+            <button class="btn btn-sm" data-act="toTodo" data-id="${item.id}">→ Todo</button>
+            <button class="btn btn-sm" data-act="toListed" data-id="${item.id}">→ Listed</button>
+            <button class="btn btn-sm" data-act="toSold" data-id="${item.id}">→ Sold</button>
+            <button class="btn btn-sm btn-danger" data-act="del" data-id="${item.id}">Usuń</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
     });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // ===== Modal =====
+  let editingId = null;
+
+  function openModal(item=null){
+    editingId = item?.id || null;
+    $("#modal").style.display = "";
+
+    $("#mName").value = item?.name || "";
+    $("#mSupplier").value = item?.supplier || "";
+    $("#mBuy").value = isFinite(Number(item?.buy)) ? Number(item.buy).toFixed(2) : "";
+    $("#mPrice").value = isFinite(Number(item?.price)) ? Number(item.price).toFixed(2) : "";
+    $("#mChannel").value = item?.channel || "allegro";
+    $("#mStatus").value = item?.status || "todo";
+    $("#mLink").value = item?.link || "";
+    $("#mSoldPrice").value = isFinite(Number(item?.soldPrice)) ? Number(item.soldPrice).toFixed(2) : "";
+    $("#mNotes").value = item?.notes || "";
+  }
+
+  function closeModal(){
+    $("#modal").style.display = "none";
+    editingId = null;
+  }
+
+  function upsertItem(payload){
+    const list = loadCRM();
+
+    if (editingId){
+      const idx = list.findIndex(x=> x.id === editingId);
+      if (idx >= 0){
+        list[idx] = { ...list[idx], ...payload, id: editingId };
+      }
+    } else {
+      list.unshift({ ...payload, id: uid(), ts: Date.now() });
+    }
+
+    saveCRM(list);
+    render();
+    toast("Zapisano pozycję.", "success");
+    closeModal();
+  }
+
+  function readIntelPrefill(){
+    try {
+      const raw = localStorage.getItem(LS_INTEL);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function readListingPrefill(){
+    try {
+      const raw = localStorage.getItem(LS_LISTING);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function bind(){
+    $("#btnReload").addEventListener("click", render);
+    $("#q").addEventListener("input", render);
+    $("#status").addEventListener("change", render);
+    $("#channel").addEventListener("change", render);
+
+    $("#btnNew").addEventListener("click", ()=> openModal(null));
+
+    $("#btnWipe").addEventListener("click", ()=> {
+      localStorage.removeItem(LS_CRM);
+      toast("CRM wyczyszczony.", "success");
+      render();
     });
-  })();
+
+    $("#btnExport").addEventListener("click", ()=> {
+      const data = loadCRM();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "qm-crm.json";
+      a.click();
+      setTimeout(()=> URL.revokeObjectURL(url), 800);
+      toast("Wyeksportowano JSON.", "success");
+    });
+
+    // modal
+    $("#mClose").addEventListener("click", closeModal);
+    $("#mSave").addEventListener("click", ()=> {
+      const name = String($("#mName").value || "").trim();
+      if (!name) return mToast("Wpisz nazwę produktu.", "error");
+
+      const payload = {
+        name,
+        supplier: String($("#mSupplier").value || "").trim(),
+        buy: n($("#mBuy").value),
+        price: n($("#mPrice").value),
+        channel: String($("#mChannel").value || "allegro"),
+        status: String($("#mStatus").value || "todo"),
+        link: String($("#mLink").value || "").trim(),
+        soldPrice: n($("#mSoldPrice").value),
+        notes: String($("#mNotes").value || "").trim(),
+        ts: editingId ? Date.now() : undefined
+      };
+
+      // jeśli SOLD, to wymagaj soldPrice
+      if (payload.status === "sold" && payload.soldPrice <= 0){
+        return mToast("Dla statusu 'Sprzedane' wpisz cenę sprzedaży.", "error");
+      }
+
+      upsertItem(payload);
+    });
+
+    $("#mFromIntel").addEventListener("click", ()=> {
+      const p = readIntelPrefill();
+      if (!p) return mToast("Brak prefill z Intelligence. Najpierw wyślij produkt.", "error");
+
+      $("#mName").value = p.name || "";
+      if (isFinite(Number(p.wholesale))) $("#mBuy").value = Number(p.wholesale).toFixed(2);
+      if (isFinite(Number(p.retail))) $("#mPrice").value = Number(p.retail).toFixed(2);
+      $("#mSupplier").value = p.supplierName || "";
+      $("#mChannel").value = "allegro";
+      $("#mStatus").value = "todo";
+      $("#mNotes").value = p.supplierName ? ("Hurtownia: " + p.supplierName) : "";
+      mToast("Zaciągnięto z Intelligence.", "success");
+    });
+
+    $("#mFromListing").addEventListener("click", ()=> {
+      const p = readListingPrefill();
+      if (!p) return mToast("Brak prefill z Listing. Najpierw zrób listing.", "error");
+
+      $("#mName").value = p.name || "";
+      if (isFinite(Number(p.wholesale))) $("#mBuy").value = Number(p.wholesale).toFixed(2);
+      if (isFinite(Number(p.retail))) $("#mPrice").value = Number(p.retail).toFixed(2);
+      $("#mSupplier").value = "";
+      $("#mChannel").value = p.channel || "allegro";
+      $("#mStatus").value = "listed";
+      $("#mNotes").value = (p.notes || "");
+      mToast("Zaciągnięto z Listing.", "success");
+    });
+
+    // tabela akcje
+    $("#tbody").addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+
+      const act = btn.getAttribute("data-act");
+      const id = btn.getAttribute("data-id");
+      let list = loadCRM();
+      const item = list.find(x=> x.id === id);
+      if (!item) return;
+
+      if (act === "edit"){
+        openModal(item);
+        return;
+      }
+
+      if (act === "del"){
+        list = list.filter(x=> x.id !== id);
+        saveCRM(list);
+        toast("Usunięto pozycję.", "success");
+        render();
+        return;
+      }
+
+      const setStatus = (s)=>{
+        const idx = list.findIndex(x=> x.id === id);
+        if (idx < 0) return;
+        list[idx] = { ...list[idx], status: s, ts: Date.now() };
+        saveCRM(list);
+        render();
+      };
+
+      if (act === "toTodo") setStatus("todo");
+      if (act === "toListed") setStatus("listed");
+      if (act === "toSold"){
+        // jeśli nie ma soldPrice – poproś szybko
+        if (!n(item.soldPrice)){
+          const sp = prompt("Podaj cenę sprzedaży (zł):", String(n(item.price).toFixed(2)));
+          if (sp === null) return;
+          const soldPrice = Number(String(sp).replace(",", "."));
+          if (!isFinite(soldPrice) || soldPrice <= 0) return toast("Zła cena sprzedaży.", "error");
+          const idx = list.findIndex(x=> x.id === id);
+          list[idx] = { ...list[idx], soldPrice, status: "sold", ts: Date.now() };
+          saveCRM(list);
+          render();
+          return;
+        }
+        setStatus("sold");
+      }
+    });
+
+    // mobilne menu
+    (function () {
+      const root = document.querySelector("[data-nav-root]");
+      const btn = document.querySelector("[data-nav-toggle]");
+      const links = document.querySelector("[data-nav-links]");
+      if (!root || !btn || !links) return;
+
+      const close = () => {
+        root.classList.remove("nav-open");
+        btn.setAttribute("aria-expanded", "false");
+      };
+      const toggle = () => {
+        const open = root.classList.toggle("nav-open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+
+      btn.addEventListener("click", toggle);
+      links.addEventListener("click", (e) => {
+        if (e.target.tagName === "A") close();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") close();
+      });
+    })();
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    bind();
+    render();
+  });
 </script>
 
 </body>
