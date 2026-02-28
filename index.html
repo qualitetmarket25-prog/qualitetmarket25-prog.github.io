@@ -1,142 +1,97 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Zarabianie u Szefa – Start</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zarabianie u Szefa — Start</title>
 
-  <!-- favicon -->
-  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="./favicon.ico" />
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f14">
+  <!-- Jeśli używasz PWA -->
+  <link rel="manifest" href="./manifest.json" />
 
-  <!-- iOS PWA -->
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <!-- planGuard (ROOT) -->
-  <script src="/planGuard.js" defer></script>
+  <!-- KLUCZOWE: poprawne ścieżki -->
+  <script defer src="./app.js"></script>
+  <script defer src="./js/planGuard.js"></script>
 </head>
 
 <body>
+  <header class="topbar">
+    <nav class="nav">
+      <a class="nav__item" href="./index.html">Start</a>
+      <a class="nav__item" href="./cennik.html">Plany</a>
+      <a class="nav__item" href="./qualitetmarket.html">QualitetMarket</a>
+      <a class="nav__item" href="./intelligence.html">Intelligence</a>
+      <a class="nav__item" href="./blueprints.html">Blueprints</a>
+      <a class="nav__item" href="./hurtownie.html">Hurtownie</a>
+      <a class="nav__item" href="./dashboard.html">Dashboard</a>
+      <a class="nav__item nav__right" href="./login.html">Zaloguj</a>
+      <a class="nav__item nav__cta" href="./aktywuj-pro.html">Aktywuj PRO</a>
+    </nav>
+  </header>
 
-<div class="nav" data-nav-root>
-  <div class="nav-inner">
-    <div class="brand">
-      <div class="logo"></div>
-      <div class="brand-title">Zarabianie u Szefa</div>
-      <span id="planBadge" class="plan-badge"></span>
-    </div>
+  <main class="container">
+    <section class="hero card">
+      <div class="row" style="align-items:center; gap:12px;">
+        <span class="badge">Platforma w budowie (demo)</span>
+        <span class="spacer"></span>
+        <span class="badge" id="planBadge">PLAN: …</span>
+      </div>
 
-    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" data-nav-toggle>
-      <span></span><span></span><span></span>
-    </button>
+      <h1 class="hero__title">Zarabianie u Szefa</h1>
+      <p class="muted">
+        System do wyboru produktów, liczenia marży i wdrażania gotowych schematów sprzedaży — wszystko w wersji mobile-first.
+      </p>
 
-    <div class="nav-links" data-nav-links>
-      <a class="active" href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a href="blueprints.html">Blueprints</a>
-      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="dashboard.html">Dashboard</a>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn" id="goPlans">Zobacz plany</button>
+        <button class="btn secondary" id="goQM">Wejdź do QualitetMarket</button>
+        <button class="btn secondary" id="goIntel">Sprawdź Intelligence</button>
+        <button class="btn secondary" id="goDash">Przejdź do Dashboard</button>
+      </div>
+    </section>
 
-      <div class="nav-links-sep"></div>
-
-      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
-    </div>
-  </div>
-</div>
-
-<div class="wrap">
-
-  <div class="hero-card reveal">
-    <span class="badge"><span class="dot"></span> Platforma w budowie (demo)</span>
-    <div class="h1">Zarabianie u Szefa</div>
-    <div class="p">System do wyboru produktów, liczenia marży i wdrażania gotowych schematów sprzedaży — wszystko w wersji mobile-first.</div>
-
-    <div class="hr"></div>
-
-    <div class="hero-cta">
-      <a class="btn btn-primary" href="cennik.html">Zobacz plany</a>
-      <a class="btn" href="qualitetmarket.html">Wejdź do QualitetMarket</a>
-      <a class="btn btn-secondary" href="intelligence.html">Sprawdź Intelligence</a>
-      <a class="btn" href="dashboard.html">Przejdź do Dashboard</a>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title reveal">
+    <section style="margin-top:18px;">
       <h2>Co tu robisz w 3 krokach</h2>
-      <p>Prosto: produkt → wynik → wdrożenie.</p>
-    </div>
 
-    <div class="cards">
-      <div class="card reveal d2">
-        <h3>1) Intelligence</h3>
-        <p>Scoring produktu + szybka ocena opłacalności.</p>
+      <div class="grid3">
+        <div class="card">
+          <h3>1) Intelligence</h3>
+          <p class="muted">Scoring produktu + szybka ocena opłacalności.</p>
+        </div>
+        <div class="card">
+          <h3>2) Hurtownie</h3>
+          <p class="muted">Dostawcy i CSV — selekcja ofert, które mają sens.</p>
+        </div>
+        <div class="card">
+          <h3>3) Blueprints</h3>
+          <p class="muted">Gotowe schematy sprzedaży, które wdrażasz od ręki.</p>
+        </div>
       </div>
-      <div class="card reveal d3">
-        <h3>2) Hurtownie</h3>
-        <p>Dostawcy i CSV — selekcja ofert, które mają sens.</p>
-      </div>
-      <div class="card reveal d4">
-        <h3>3) Blueprints</h3>
-        <p>Gotowe schematy sprzedaży, które wdrażasz od ręki.</p>
-      </div>
-    </div>
-  </div>
+    </section>
 
-</div>
+    <footer class="footer muted" style="margin-top:22px;">
+      © 2026 Zarabianie u Szefa × QualitetMarket
+    </footer>
+  </main>
 
-<div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
+  <script>
+    // Minimalny init bez zależności od app.js (żeby header zawsze działał)
+    (function(){
+      try {
+        const plan = JSON.parse(localStorage.getItem("qm_plan_v1") || '"basic"');
+        const badge = document.getElementById("planBadge");
+        if (badge) badge.textContent = "PLAN: " + String(plan).toUpperCase();
+      } catch(e) {}
 
-<!-- app.js (ROOT) -->
-<script src="/app.js" defer></script>
+      const nav = (p) => location.href = p;
 
-<script>
-  // mobilne menu (hamburger)
-  (function () {
-    const root = document.querySelector("[data-nav-root]");
-    const btn = document.querySelector("[data-nav-toggle]");
-    const links = document.querySelector("[data-nav-links]");
-    if (!root || !btn || !links) return;
-
-    const close = () => {
-      root.classList.remove("nav-open");
-      btn.setAttribute("aria-expanded", "false");
-    };
-    const toggle = () => {
-      const open = root.classList.toggle("nav-open");
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-    };
-
-    btn.addEventListener("click", toggle);
-    links.addEventListener("click", (e) => {
-      if (e.target.tagName === "A") close();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") close();
-    });
-  })();
-</script>
-
-<!-- PWA: rejestracja Service Worker (ROOT domeny GitHub Pages) -->
-<script>
-  (function () {
-    if (!("serviceWorker" in navigator)) return;
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(() => console.log("SW OK"))
-        .catch(err => console.log("SW ERROR", err));
-    });
-  })();
-</script>
-
+      document.getElementById("goPlans")?.addEventListener("click", ()=>nav("./cennik.html"));
+      document.getElementById("goQM")?.addEventListener("click", ()=>nav("./qualitetmarket.html"));
+      document.getElementById("goIntel")?.addEventListener("click", ()=>nav("./intelligence.html"));
+      document.getElementById("goDash")?.addEventListener("click", ()=>nav("./dashboard.html"));
+    })();
+  </script>
 </body>
 </html>
