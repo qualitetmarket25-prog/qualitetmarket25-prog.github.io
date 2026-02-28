@@ -6,12 +6,24 @@
    Login (opcjonalnie):
    - localStorage.is_logged_in: "true"
 */
-
 (function () {
   const PLAN_KEY = "status";
   const LOGIN_KEY = "is_logged_in";
 
   const PLAN_ORDER = { BASIC: 0, PRO: 1, ELITE: 2 };
+
+  // Ustal bazę dla redirectów (działa też gdy otworzysz /folder/strona.html)
+  function basePath() {
+    const p = window.location.pathname;
+    // jeśli /something.html -> zwróć katalog
+    return p.slice(0, p.lastIndexOf("/") + 1);
+  }
+
+  function urlTo(page) {
+    // jeśli masz repo GitHub Pages, to i tak bazą jest / (zwykle /)
+    // ale gdy wejdzie z podkatalogu, to to trzyma spójność
+    return basePath() + page;
+  }
 
   function normPlan(p) {
     p = (p || "BASIC").toUpperCase();
@@ -39,49 +51,54 @@
     return PLAN_ORDER[plan] >= PLAN_ORDER[required];
   }
 
-  function redirect(url) {
-    window.location.href = url;
+  function redirect(page) {
+    window.location.href = urlTo(page);
   }
 
   function renderBadge(plan) {
-    const el = document.getElementById("planBadge");
-    if (!el) return;
-    el.textContent = plan;
+    // Obsługa obu wariantów: id="planBadge" lub data-pro-badge / data-qm-plan
+    const byId = document.getElementById("planBadge");
+    if (byId) byId.textContent = plan;
+
+    const proBadge = document.querySelector("[data-pro-badge]");
+    if (proBadge) proBadge.textContent = plan;
+
+    const qmPlan = document.querySelector("[data-qm-plan]");
+    if (qmPlan) qmPlan.textContent = plan;
+  }
+
+  function toggleLinks(selectorList, show) {
+    selectorList.forEach(sel => {
+      document.querySelectorAll(sel).forEach(a => {
+        a.style.display = show ? "" : "none";
+        a.setAttribute("aria-hidden", show ? "false" : "true");
+      });
+    });
   }
 
   function hideLinksByPlan(plan) {
     // Hurtownie tylko PRO+
-    const hurt = document.querySelector('a[href="hurtownie.html"], a[href="/hurtownie.html"]');
-    if (hurt) {
-      if (PLAN_ORDER[plan] < PLAN_ORDER.PRO) {
-        hurt.style.display = "none";
-      } else {
-        hurt.style.display = "";
-      }
-    }
+    toggleLinks(
+      ['a[href="hurtownie.html"]', 'a[href="/hurtownie.html"]'],
+      PLAN_ORDER[plan] >= PLAN_ORDER.PRO
+    );
 
     // QualitetMarket tylko PRO+
-    const qm = document.querySelector('a[href="qualitetmarket.html"], a[href="/qualitetmarket.html"]');
-    if (qm) {
-      if (PLAN_ORDER[plan] < PLAN_ORDER.PRO) {
-        qm.style.display = "none";
-      } else {
-        qm.style.display = "";
-      }
-    }
+    toggleLinks(
+      ['a[href="qualitetmarket.html"]', 'a[href="/qualitetmarket.html"]'],
+      PLAN_ORDER[plan] >= PLAN_ORDER.PRO
+    );
 
-    // Intelligence + Blueprints tylko ELITE (jeśli tak chcesz)
-    const intel = document.querySelector('a[href="intelligence.html"], a[href="/intelligence.html"]');
-    if (intel) {
-      if (PLAN_ORDER[plan] < PLAN_ORDER.ELITE) intel.style.display = "none";
-      else intel.style.display = "";
-    }
+    // Intelligence + Blueprints tylko ELITE (zostawiam tak jak masz)
+    toggleLinks(
+      ['a[href="intelligence.html"]', 'a[href="/intelligence.html"]'],
+      PLAN_ORDER[plan] >= PLAN_ORDER.ELITE
+    );
 
-    const blue = document.querySelector('a[href="blueprints.html"], a[href="/blueprints.html"]');
-    if (blue) {
-      if (PLAN_ORDER[plan] < PLAN_ORDER.ELITE) blue.style.display = "none";
-      else blue.style.display = "";
-    }
+    toggleLinks(
+      ['a[href="blueprints.html"]', 'a[href="/blueprints.html"]'],
+      PLAN_ORDER[plan] >= PLAN_ORDER.ELITE
+    );
   }
 
   function gatePage() {
@@ -89,7 +106,7 @@
     renderBadge(plan);
     hideLinksByPlan(plan);
 
-    const requireAttr = document.body.getAttribute("data-require"); // pro | elite | login
+    const requireAttr = document.body.getAttribute("data-require"); // basic|pro|elite|login
     if (!requireAttr) return;
 
     const req = requireAttr.toLowerCase().trim();
@@ -109,7 +126,7 @@
 
   document.addEventListener("DOMContentLoaded", gatePage);
 
-  // Mini API pod debug/sterowanie
+  // Mini API pod debug/sterowanie (zostawiam)
   window.QualitetGuard = {
     getPlan,
     isLoggedIn,
