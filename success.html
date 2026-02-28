@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Płatność zakończona</title>
 
-  <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="icons/icon-192.png" />
 
   <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0f14">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b0f14" />
 </head>
 <body>
 
@@ -24,21 +24,11 @@
 </section>
 
 <script>
+  // -------- helpers --------
   function getParam(name){
     const url = new URL(window.location.href);
     return url.searchParams.get(name);
   }
-
-  const planRaw = (getParam("plan") || "");
-  const plan = planRaw.toUpperCase();
-  const token = getParam("token");
-  const box = document.getElementById("box");
-
-  // ====== TOKENY (demo) ======
-  const VALID_TOKENS = {
-    PRO: "PRO2026SZEF",
-    ELITE: "ELITE2026SZEF"
-  };
 
   function addDaysISO(days){
     const d = new Date();
@@ -46,42 +36,87 @@
     return d.toISOString();
   }
 
-  const okPlan = (plan === "PRO" || plan === "ELITE");
-  const okToken = okPlan && token === VALID_TOKENS[plan];
+  function normalizePlan(raw){
+    const p = (raw || "").trim().toLowerCase();
+    if (p === "pro" || p === "premium") return "pro";
+    if (p === "elite") return "elite";
+    // akceptuj też PRO/ELITE
+    if (p === "pro".toUpperCase().toLowerCase()) return "pro";
+    if (p === "elite".toUpperCase().toLowerCase()) return "elite";
+    return "";
+  }
 
-  if (okToken) {
-    // ✅ ŹRÓDŁO PRAWDY
-    localStorage.setItem("status", plan);
-    localStorage.setItem("last_paid_plan", plan);   // <-- klucz naprawiający spadki do BASIC
+  // -------- inputs --------
+  const planParam = getParam("plan");                 // pro|PRO|elite|ELITE
+  const token = getParam("token");                    // demo token
+  const demo = (getParam("demo") === "1");            // pozwala testować bez tokena
+  const box = document.getElementById("box");
+
+  const plan = normalizePlan(planParam);
+
+  // ====== TOKENY (demo) ======
+  const VALID_TOKENS = {
+    pro: "PRO2026SZEF",
+    elite: "ELITE2026SZEF"
+  };
+
+  // -------- validation --------
+  const hasParams = !!planParam || !!token;
+  const okPlan = (plan === "pro" || plan === "elite");
+  const okToken = okPlan && token === VALID_TOKENS[plan];
+  const ok = okToken || (demo && okPlan);
+
+  if (!hasParams) {
+    box.innerHTML = `
+      <h2>ℹ️ Brak parametrów aktywacji</h2>
+      <p style="margin-top:10px;color:#cbd5e1;">
+        Ta strona działa jako zakończenie płatności i wymaga linku z parametrami.
+      </p>
+      <p style="margin-top:10px;color:#94a3b8;">
+        Przykład testowy: <code>?plan=pro&token=PRO2026SZEF</code>
+      </p>
+      <div style="margin-top:20px;">
+        <a href="cennik.html" class="btn btn-primary">Wróć do cennika</a>
+      </div>
+    `;
+  } else if (ok) {
+    // ✅ ŹRÓDŁO PRAWDY (SPÓJNE KLUCZE)
+    // - qm_plan: "guest" | "basic" | "pro" | "elite"
+    // - proStatus (legacy): true dla pro/elite
+    localStorage.setItem("qm_plan", plan);
+    localStorage.setItem("proStatus", "true");
+
+    // kompatybilność wstecz (jeśli gdzieś stary kod czyta inne klucze)
+    localStorage.setItem("plan", plan.toUpperCase());                 // stary format
+    localStorage.setItem("status", plan.toUpperCase());
+    localStorage.setItem("last_paid_plan", plan.toUpperCase());
     localStorage.setItem("is_logged_in", "true");
     localStorage.setItem("paid_at", new Date().toISOString());
 
-    // kompatybilność wstecz (jeśli gdzieś stary kod czyta inne klucze)
-    localStorage.setItem("plan", plan);
-    localStorage.setItem("qm_plan", plan);
-
-    // demo: ważność planu 30 dni (możesz zmienić)
+    // demo: ważność planu 30 dni
     localStorage.setItem("plan_expires_at", addDaysISO(30));
 
     box.innerHTML = `
       <h2>✅ Płatność zakończona</h2>
       <p style="margin-top:10px;color:#cbd5e1;">
-        Aktywowano plan: <strong style="color:#fff;">${plan}</strong>
+        Aktywowano plan: <strong style="color:#fff;">${plan.toUpperCase()}</strong>
       </p>
-      <p style="margin-top:10px;color:#94a3b8;">
-        Trwa przekierowanie...
-      </p>
+      <p style="margin-top:10px;color:#94a3b8;">Trwa przekierowanie do panelu...</p>
     `;
 
     setTimeout(() => {
       window.location.href = "dashboard.html";
-    }, 1200);
+    }, 900);
 
   } else {
     box.innerHTML = `
       <h2>❌ Weryfikacja nieudana</h2>
       <p style="margin-top:10px;color:#cbd5e1;">
-        Link nieprawidłowy lub wygasły.
+        Parametry są niepoprawne lub token nie pasuje do planu.
+      </p>
+      <p style="margin-top:10px;color:#94a3b8;">
+        Otrzymano: plan=<code>${(planParam||"").replaceAll("<","&lt;")}</code>,
+        token=<code>${(token||"").replaceAll("<","&lt;")}</code>
       </p>
       <div style="margin-top:20px;">
         <a href="cennik.html" class="btn btn-primary">Wróć do cennika</a>
