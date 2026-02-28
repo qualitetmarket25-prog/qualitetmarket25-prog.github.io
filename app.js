@@ -1,83 +1,181 @@
-// ===== plan (single source of truth) =====
-// Canon: qm_plan = "basic" | "pro" | "elite"
-// Compat: qm_plan_v1 (JSON "pro"), status/plan (uppercase), proStatus (true)
-function normalizePlan(raw) {
-  const s = String(raw ?? "").trim();
-  const u = s.toUpperCase();
-  const l = s.toLowerCase();
+(() => {
+  "use strict";
 
-  if (u === "ELITE" || l === "elite") return "elite";
-  if (u === "PRO" || u === "PREMIUM" || l === "pro" || l === "premium") return "pro";
-  if (u === "BASIC" || u === "FREE" || u === "GUEST" || l === "basic" || l === "free" || l === "guest" || !s) return "basic";
+  // ---------------------------
+  // helpers
+  // ---------------------------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  return "basic";
-}
+  // ---------------------------
+  // PLAN (single source of truth)
+  // Canon: qm_plan = "basic" | "pro" | "elite"
+  // Compat: qm_plan_v1 (JSON), status/plan (uppercase), proStatus (true)
+  // ---------------------------
+  function normalizePlan(raw) {
+    const s = String(raw ?? "").trim();
+    const u = s.toUpperCase();
+    const l = s.toLowerCase();
 
-function readPlanAny() {
-  // 1) canonical
-  const qm = localStorage.getItem("qm_plan");
-  if (qm) return normalizePlan(qm);
-
-  // 2) v1 JSON or raw
-  const rawV1 = localStorage.getItem("qm_plan_v1");
-  if (rawV1) {
-    try { return normalizePlan(JSON.parse(rawV1)); } catch { return normalizePlan(rawV1); }
+    if (u === "ELITE" || l === "elite") return "elite";
+    if (u === "PRO" || u === "PREMIUM" || l === "pro" || l === "premium") return "pro";
+    if (u === "BASIC" || u === "FREE" || u === "GUEST" || l === "basic" || l === "free" || l === "guest" || !s) return "basic";
+    return "basic";
   }
 
-  // 3) legacy
-  const status = localStorage.getItem("status");
-  if (status) return normalizePlan(status);
+  function readPlanAny() {
+    const qm = localStorage.getItem("qm_plan");
+    if (qm) return normalizePlan(qm);
 
-  const plan = localStorage.getItem("plan");
-  if (plan) return normalizePlan(plan);
+    const rawV1 = localStorage.getItem("qm_plan_v1");
+    if (rawV1) {
+      try { return normalizePlan(JSON.parse(rawV1)); } catch { return normalizePlan(rawV1); }
+    }
 
-  const zsz = localStorage.getItem("zsz_plan");
-  if (zsz) return normalizePlan(zsz);
+    const status = localStorage.getItem("status");
+    if (status) return normalizePlan(status);
 
-  return "basic";
-}
+    const plan = localStorage.getItem("plan");
+    if (plan) return normalizePlan(plan);
 
-function writePlanAll(planLower) {
-  const p = normalizePlan(planLower);
+    const zsz = localStorage.getItem("zsz_plan");
+    if (zsz) return normalizePlan(zsz);
 
-  // canonical
-  localStorage.setItem("qm_plan", p);
+    return "basic";
+  }
 
-  // compat
-  localStorage.setItem("qm_plan_v1", JSON.stringify(p));
-  localStorage.setItem("status", p.toUpperCase());
-  localStorage.setItem("plan", p.toUpperCase());
+  function writePlanAll(planLower) {
+    const p = normalizePlan(planLower);
 
-  if (p === "pro" || p === "elite") localStorage.setItem("proStatus", "true");
-  else localStorage.removeItem("proStatus");
+    localStorage.setItem("qm_plan", p);
+    localStorage.setItem("qm_plan_v1", JSON.stringify(p));
+    localStorage.setItem("status", p.toUpperCase());
+    localStorage.setItem("plan", p.toUpperCase());
 
-  return p;
-}
+    if (p === "pro" || p === "elite") localStorage.setItem("proStatus", "true");
+    else localStorage.removeItem("proStatus");
 
-function qmGetPlan() {
-  // normalize + sync to avoid split-brain
-  const p = readPlanAny();
-  return writePlanAll(p);
-}
+    return p;
+  }
 
-function qmIsElite() {
-  return qmGetPlan() === "elite";
-}
+  function qmGetPlan() {
+    const p = readPlanAny();
+    return writePlanAll(p); // sync to avoid split-brain
+  }
 
-function qmHasAtLeast(required) {
-  const rank = { basic: 0, pro: 1, elite: 2 };
-  const cur = qmGetPlan();
-  const req = normalizePlan(required);
-  return (rank[cur] ?? 0) >= (rank[req] ?? 0);
-}
+  function qmSetPlan(planLower) {
+    return writePlanAll(planLower);
+  }
 
-function qmSetPlan(planLower) {
-  return writePlanAll(planLower);
-}
+  function qmHasAtLeast(required) {
+    const rank = { basic: 0, pro: 1, elite: 2 };
+    const cur = qmGetPlan();
+    const req = normalizePlan(required);
+    return (rank[cur] ?? 0) >= (rank[req] ?? 0);
+  }
 
-// expose
-window.QM = window.QM || {};
-window.QM.getPlan = qmGetPlan;
-window.QM.setPlan = qmSetPlan;
-window.QM.isElite = qmIsElite;
-window.QM.hasAtLeast = qmHasAtLeast;
+  function qmIsElite() {
+    return qmGetPlan() === "elite";
+  }
+
+  // ---------------------------
+  // AUTH (UI-level)
+  // ---------------------------
+  function isLogged() {
+    return localStorage.getItem("is_logged_in") === "true";
+  }
+
+  function renderAuthUI() {
+    const logged = isLogged();
+    $$("[data-guest-only]").forEach(el => (el.style.display = logged ? "none" : ""));
+    $$("[data-auth-only]").forEach(el => (el.style.display = logged ? "" : "none"));
+
+    const label = $("[data-auth-label]");
+    if (label) label.textContent = logged ? "Zalogowany" : "Gość";
+  }
+
+  // ---------------------------
+  // BADGES
+  // ---------------------------
+  function renderPlanBadge() {
+    const plan = qmGetPlan();
+    const text = plan.toUpperCase();
+
+    const badge1 = $("#planBadge");
+    if (badge1) badge1.textContent = `PLAN: ${text}`;
+
+    $$("[data-qm-plan]").forEach(el => {
+      el.textContent = text;
+      el.dataset.plan = plan;
+    });
+  }
+
+  // ---------------------------
+  // NAV (mobile)
+  // expects:
+  //  [data-nav-root], [data-nav-toggle], [data-nav-links]
+  // ---------------------------
+  function bindMobileNav() {
+    const root = $("[data-nav-root]");
+    const btn = $("[data-nav-toggle]");
+    const links = $("[data-nav-links]");
+    if (!root || !btn || !links) return;
+
+    const close = () => {
+      root.classList.remove("nav-open");
+      btn.setAttribute("aria-expanded", "false");
+    };
+
+    const toggle = () => {
+      const open = root.classList.toggle("nav-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    btn.addEventListener("click", toggle);
+    links.addEventListener("click", (e) => {
+      if (e.target && e.target.tagName === "A") close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  }
+
+  // ---------------------------
+  // LOGOUT
+  // ---------------------------
+  function bindLogout() {
+    $$("[data-logout]").forEach(el => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.setItem("is_logged_in", "false");
+        // nie resetuj planu automatycznie, bo demo bywa różne — ale możesz jeśli chcesz:
+        // qmSetPlan("basic");
+        location.href = "index.html";
+      });
+    });
+  }
+
+  // ---------------------------
+  // BOOT
+  // ---------------------------
+  function boot() {
+    // expose API
+    window.QM = window.QM || {};
+    window.QM.getPlan = qmGetPlan;
+    window.QM.setPlan = qmSetPlan;
+    window.QM.hasAtLeast = qmHasAtLeast;
+    window.QM.isElite = qmIsElite;
+    window.QM.isLogged = isLogged;
+
+    renderAuthUI();
+    renderPlanBadge();
+    bindMobileNav();
+    bindLogout();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
