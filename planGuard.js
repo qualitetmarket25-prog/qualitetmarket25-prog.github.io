@@ -1,87 +1,119 @@
-let supplierScores = [];
+/* planGuard.js — Qualitet / Zarabianie u Szefa
+   Sterowanie dostępem planów + lekkie “auth” pod demo (localStorage)
 
-function processCSV() {
-    const fileInput = document.getElementById("csvFile");
-    const file = fileInput.files[0];
+   Plan:
+   - localStorage.status: BASIC | PRO | ELITE
+   Login (opcjonalnie):
+   - localStorage.is_logged_in: "true"
+*/
 
-    if (!file) {
-        alert("Wybierz plik CSV.");
-        return;
+(function () {
+  const PLAN_KEY = "status";
+  const LOGIN_KEY = "is_logged_in";
+
+  const PLAN_ORDER = { BASIC: 0, PRO: 1, ELITE: 2 };
+
+  function normPlan(p) {
+    p = (p || "BASIC").toUpperCase();
+    return (p === "PRO" || p === "ELITE") ? p : "BASIC";
+  }
+
+  function getPlan() {
+    return normPlan(localStorage.getItem(PLAN_KEY));
+  }
+
+  function isLoggedIn() {
+    return localStorage.getItem(LOGIN_KEY) === "true";
+  }
+
+  function requiredLevel(require) {
+    const r = (require || "").toLowerCase().trim();
+    if (r === "elite") return "ELITE";
+    if (r === "pro") return "PRO";
+    if (r === "basic") return "BASIC";
+    return null; // brak wymagań
+  }
+
+  function hasAccess(plan, required) {
+    if (!required) return true;
+    return PLAN_ORDER[plan] >= PLAN_ORDER[required];
+  }
+
+  function redirect(url) {
+    window.location.href = url;
+  }
+
+  function renderBadge(plan) {
+    const el = document.getElementById("planBadge");
+    if (!el) return;
+    el.textContent = plan;
+  }
+
+  function hideLinksByPlan(plan) {
+    // Hurtownie tylko PRO+
+    const hurt = document.querySelector('a[href="hurtownie.html"], a[href="/hurtownie.html"]');
+    if (hurt) {
+      if (PLAN_ORDER[plan] < PLAN_ORDER.PRO) {
+        hurt.style.display = "none";
+      } else {
+        hurt.style.display = "";
+      }
     }
 
-    const reader = new FileReader();
+    // QualitetMarket tylko PRO+
+    const qm = document.querySelector('a[href="qualitetmarket.html"], a[href="/qualitetmarket.html"]');
+    if (qm) {
+      if (PLAN_ORDER[plan] < PLAN_ORDER.PRO) {
+        qm.style.display = "none";
+      } else {
+        qm.style.display = "";
+      }
+    }
 
-    reader.onload = function (e) {
-        const text = e.target.result;
-        const rows = text.split("\n").map(r => r.split(","));
+    // Intelligence + Blueprints tylko ELITE (jeśli tak chcesz)
+    const intel = document.querySelector('a[href="intelligence.html"], a[href="/intelligence.html"]');
+    if (intel) {
+      if (PLAN_ORDER[plan] < PLAN_ORDER.ELITE) intel.style.display = "none";
+      else intel.style.display = "";
+    }
 
-        // Zakładamy strukturę:
-        // Nazwa, CenaHurtowa, CenaRynkowa
+    const blue = document.querySelector('a[href="blueprints.html"], a[href="/blueprints.html"]');
+    if (blue) {
+      if (PLAN_ORDER[plan] < PLAN_ORDER.ELITE) blue.style.display = "none";
+      else blue.style.display = "";
+    }
+  }
 
-        const results = [];
-        let totalScore = 0;
-        let productCount = 0;
+  function gatePage() {
+    const plan = getPlan();
+    renderBadge(plan);
+    hideLinksByPlan(plan);
 
-        for (let i = 1; i < rows.length; i++) {
-            const name = rows[i][0];
-            const wholesale = parseFloat(rows[i][1]);
-            const retail = parseFloat(rows[i][2]);
+    const requireAttr = document.body.getAttribute("data-require"); // pro | elite | login
+    if (!requireAttr) return;
 
-            if (!name || isNaN(wholesale) || isNaN(retail)) continue;
+    const req = requireAttr.toLowerCase().trim();
 
-            const margin = ((retail - wholesale) / wholesale) * 100;
-            const score = margin > 50 ? 100 :
-                          margin > 30 ? 70 :
-                          margin > 15 ? 40 : 10;
+    // Wymagane logowanie (opcjonalne)
+    if (req === "login") {
+      if (!isLoggedIn()) redirect("login.html");
+      return;
+    }
 
-            totalScore += score;
-            productCount++;
+    // Wymagany plan
+    const required = requiredLevel(req);
+    if (!hasAccess(plan, required)) {
+      redirect("cennik.html");
+    }
+  }
 
-            results.push({
-                name,
-                wholesale,
-                retail,
-                margin: margin.toFixed(2),
-                score
-            });
-        }
+  document.addEventListener("DOMContentLoaded", gatePage);
 
-        displayResults(results);
-
-        const avgScore = productCount ? (totalScore / productCount).toFixed(2) : 0;
-
-        supplierScores.push(avgScore);
-        displaySupplierRanking(avgScore);
-    };
-
-    reader.readAsText(file);
-}
-
-function displayResults(results) {
-    const tbody = document.querySelector("#resultsTable tbody");
-    tbody.innerHTML = "";
-
-    results.sort((a, b) => b.score - a.score);
-
-    results.forEach(product => {
-        const row = `
-            <tr>
-                <td>${product.name}</td>
-                <td>${product.wholesale} zł</td>
-                <td>${product.retail} zł</td>
-                <td>${product.margin}%</td>
-                <td>${product.score}</td>
-            </tr>
-        `;
-        tbody.innerHTML += row;
-    });
-}
-
-function displaySupplierRanking(avgScore) {
-    const ranking = document.getElementById("supplierRanking");
-    ranking.innerHTML = `
-        <div class="card soft">
-            <strong>Średni Score Hurtowni:</strong> ${avgScore}/100
-        </div>
-    `;
-}
+  // Mini API pod debug/sterowanie
+  window.QualitetGuard = {
+    getPlan,
+    isLoggedIn,
+    setLogin(flag) { localStorage.setItem(LOGIN_KEY, flag ? "true" : "false"); },
+    setPlan(p) { localStorage.setItem(PLAN_KEY, normPlan(p)); }
+  };
+})();
