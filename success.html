@@ -6,7 +6,7 @@
   <title>Płatność zakończona</title>
 
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="icon" href="icons/icon-192.png">
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
@@ -24,66 +24,75 @@
 </section>
 
 <script>
-function getParam(name){
-  const url = new URL(window.location.href);
-  return url.searchParams.get(name);
-}
+  function getParam(name){
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name);
+  }
 
-const plan = (getParam("plan") || "").toUpperCase();
-const token = getParam("token");
-const box = document.getElementById("box");
+  const planRaw = (getParam("plan") || "");
+  const plan = planRaw.toUpperCase();
+  const token = getParam("token");
+  const box = document.getElementById("box");
 
-/* ====== TOKENY ====== */
-const VALID_TOKENS = {
-  PRO: "PRO2026SZEF",
-  ELITE: "ELITE2026SZEF"
-};
+  // ====== TOKENY (demo) ======
+  const VALID_TOKENS = {
+    PRO: "PRO2026SZEF",
+    ELITE: "ELITE2026SZEF"
+  };
 
-if (
-  (plan === "PRO" || plan === "ELITE") &&
-  token === VALID_TOKENS[plan]
-) {
+  function addDaysISO(days){
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString();
+  }
 
-  localStorage.setItem("status", plan);
-  localStorage.setItem("paid_at", new Date().toISOString());
+  const okPlan = (plan === "PRO" || plan === "ELITE");
+  const okToken = okPlan && token === VALID_TOKENS[plan];
 
-  box.innerHTML = `
-    <h2>✅ Płatność zakończona</h2>
-    <p style="margin-top:10px;color:#cbd5e1;">
-      Aktywowano plan: <strong style="color:#fff;">${plan}</strong>
-    </p>
-    <p style="margin-top:10px;color:#94a3b8;">
-      Trwa przekierowanie...
-    </p>
-  `;
+  if (okToken) {
+    // ✅ spójnie z planGuard.js
+    localStorage.setItem("status", plan);
+    localStorage.setItem("is_logged_in", "true");
+    localStorage.setItem("paid_at", new Date().toISOString());
 
-  setTimeout(() => {
-    window.location.href = "dashboard.html";
-  }, 2000);
+    // demo: ważność planu 30 dni (możesz zmienić)
+    localStorage.setItem("plan_expires_at", addDaysISO(30));
 
-} else {
+    box.innerHTML = `
+      <h2>✅ Płatność zakończona</h2>
+      <p style="margin-top:10px;color:#cbd5e1;">
+        Aktywowano plan: <strong style="color:#fff;">${plan}</strong>
+      </p>
+      <p style="margin-top:10px;color:#94a3b8;">
+        Trwa przekierowanie...
+      </p>
+    `;
 
-  box.innerHTML = `
-    <h2>❌ Weryfikacja nieudana</h2>
-    <p style="margin-top:10px;color:#cbd5e1;">
-      Link nieprawidłowy lub wygasły.
-    </p>
-    <div style="margin-top:20px;">
-      <a href="cennik.html" class="btn-primary">
-        Wróć do cennika
-      </a>
-    </div>
-  `;
-}
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1200);
+
+  } else {
+
+    box.innerHTML = `
+      <h2>❌ Weryfikacja nieudana</h2>
+      <p style="margin-top:10px;color:#cbd5e1;">
+        Link nieprawidłowy lub wygasły.
+      </p>
+      <div style="margin-top:20px;">
+        <a href="cennik.html" class="btn btn-primary">Wróć do cennika</a>
+      </div>
+    `;
+  }
 </script>
 
 <!-- Service Worker -->
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js");
-  });
-}
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js");
+    });
+  }
 </script>
 
 </body>
