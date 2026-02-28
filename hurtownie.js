@@ -16,7 +16,13 @@
 
   const LS_KEY = "qm_supplier_scores_v2";
   const LS_LAST_PRODUCTS = "qm_last_products_v1";
+
+  // ✅ NOWE: produkty per hurtownia (do globalnej bazy)
+  const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
+
   const MAX_SCORES = 100;
+  const MAX_SUPPLIERS_STORE = 50;      // ile hurtowni trzymamy
+  const MAX_PRODUCTS_PER_SUPPLIER = 5000;
 
   // ===== DOM helpers =====
   const $ = (sel) => document.querySelector(sel);
@@ -42,7 +48,6 @@
     box.style.display = "";
     box.textContent = message;
 
-    // lekkie różnicowanie (bez zależności od CSS)
     box.style.opacity = "1";
     box.style.border = "1px solid rgba(148,163,184,.25)";
     box.style.background = "rgba(148,163,184,.08)";
@@ -55,7 +60,6 @@
       box.style.background = "rgba(34,197,94,.10)";
     }
 
-    // auto hide
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => {
       box.style.opacity = "0";
@@ -85,7 +89,6 @@
     let s = String(raw).trim();
     if (!s) return NaN;
 
-    // BOM, waluty, spacje
     s = s.replace(/^\uFEFF/, "");
     s = s.replace(/\s/g, "");
     s = s.replace(/zł|pln|PLN|ZŁ/gi, "");
@@ -94,7 +97,6 @@
     const hasDot = s.includes(".");
 
     if (hasComma && hasDot) {
-      // ostatni separator traktujemy jako dziesiętny
       if (s.lastIndexOf(",") > s.lastIndexOf(".")) {
         s = s.replace(/\./g, "");
         s = s.replace(",", ".");
@@ -126,9 +128,7 @@
     return ",";
   }
 
-  // parser z cudzysłowami
   function parseCSV(text) {
-    // usuń BOM
     text = String(text ?? "").replace(/^\uFEFF/, "");
 
     const delimiter = detectDelimiter(text);
@@ -189,17 +189,9 @@
 
   // ===== Column mapping =====
   const HEADER_SYNONYMS = {
-    name: [
-      "nazwa", "produkt", "product", "name", "towar", "item", "title", "opis", "description"
-    ],
-    wholesale: [
-      "cenahurtowa", "hurt", "hurtowa", "wholesale", "purchase", "kupno", "cena", "netto", "cennanetto",
-      "buyprice", "pricebuy", "cost", "supplierprice"
-    ],
-    retail: [
-      "cenarynkowa", "rynkowa", "retail", "market", "cenadetaliczna", "detal", "brutto", "cenabrutto",
-      "sellprice", "pricesell", "msrp"
-    ],
+    name: ["nazwa", "produkt", "product", "name", "towar", "item", "title", "opis", "description"],
+    wholesale: ["cenahurtowa", "hurt", "hurtowa", "wholesale", "purchase", "kupno", "cena", "netto", "cennanetto", "buyprice", "pricebuy", "cost", "supplierprice"],
+    retail: ["cenarynkowa", "rynkowa", "retail", "market", "cenadetaliczna", "detal", "brutto", "cenabrutto", "sellprice", "pricesell", "msrp"],
   };
 
   function findIndex(headerNorm, keys) {
@@ -217,7 +209,6 @@
     const idxWholesale = findIndex(header, HEADER_SYNONYMS.wholesale);
     const idxRetail = findIndex(header, HEADER_SYNONYMS.retail);
 
-    // fallback: 0,1,2
     return {
       idxName: idxName >= 0 ? idxName : 0,
       idxWholesale: idxWholesale >= 0 ? idxWholesale : 1,
@@ -234,7 +225,6 @@
   }
 
   function scoreMargin(marginPct) {
-    // agresywne pod e-commerce
     if (marginPct >= 80) return 100;
     if (marginPct >= 50) return 85;
     if (marginPct >= 35) return 70;
@@ -244,7 +234,6 @@
   }
 
   function scoreSpread(wholesale, retail) {
-    // spread w PLN - premiuj sensowną kwotę (na reklamy/zwroty/obsługę)
     const spread = retail - wholesale;
     if (!Number.isFinite(spread)) return 0;
     if (spread >= 200) return 20;
@@ -256,13 +245,9 @@
   }
 
   function computeScore(wholesale, retail, marginPct) {
-    // baza: marża (0..100), bonus: spread (0..20), sanity: kara za ujemne / podejrzane
     const base = scoreMargin(marginPct);
     const spread = scoreSpread(wholesale, retail);
-
-    // kara jeśli retail <= wholesale
     const penalty = retail <= wholesale ? 25 : 0;
-
     return clamp(Math.round(base + spread - penalty), 0, 100);
   }
 
@@ -290,10 +275,40 @@
   }
 
   function upsertScore(scores, entry) {
-    // deduplikacja po supplierName (ostatni wynik wygrywa)
     const key = normalizeSupplierName(entry.supplierName);
     const without = scores.filter((x) => normalizeSupplierName(x.supplierName) !== key);
     return [entry, ...without].slice(0, MAX_SCORES);
+  }
+
+  // ✅ NOWE: LocalStorage produkty per hurtownia
+  function loadProductsBySupplier() {
+    try {
+      const raw = localStorage.getItem(LS_PRODUCTS_BY_SUPPLIER);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveProductsBySupplier(list) {
+    localStorage.setItem(
+      LS_PRODUCTS_BY_SUPPLIER,
+      JSON.stringify(list.slice(0, MAX_SUPPLIERS_STORE))
+    );
+  }
+
+  function upsertSupplierProducts(list, supplierName, products) {
+    const key = normalizeSupplierName(supplierName);
+    const without = list.filter((x) => normalizeSupplierName(x?.supplierName) !== key);
+    return [
+      {
+        supplierName,
+        ts: new Date().toISOString(),
+        products: products.slice(0, MAX_PRODUCTS_PER_SUPPLIER),
+      },
+      ...without,
+    ].slice(0, MAX_SUPPLIERS_STORE);
   }
 
   // ===== Products memory (for search/export) =====
@@ -518,7 +533,6 @@
       return;
     }
 
-    // sort: score desc, margin desc, retail desc (stabilniej)
     products.sort((a, b) =>
       (b.score - a.score) ||
       (b.marginPct - a.marginPct) ||
@@ -527,7 +541,14 @@
 
     // render tabela
     renderResults(products, { highlightTop: 10 });
+
+    // zapisz ostatnie produkty (search/export)
     saveLastProducts(products);
+
+    // ✅ NOWE: zapis produktów per hurtownia (globalna baza)
+    const allSuppliers = loadProductsBySupplier();
+    const nextSuppliers = upsertSupplierProducts(allSuppliers, supplierName, products);
+    saveProductsBySupplier(nextSuppliers);
 
     const avgScore = products.length ? (sumScore / products.length) : 0;
 
@@ -541,7 +562,6 @@
     const bestProduct = products[0] || null;
     renderSupplierSummary(entry, bestProduct);
 
-    // ranking hurtowni
     const scores = upsertScore(loadScores(), entry);
     saveScores(scores);
     renderSupplierRanking(scores, entry);
@@ -564,7 +584,6 @@
     els.analyzeBtn()?.addEventListener("click", processCSV);
     els.clearBtn()?.addEventListener("click", clearTable);
 
-    // search
     const applySearch = debounce(() => {
       const q = String(els.search()?.value ?? "").trim().toLowerCase();
       const all = loadLastProducts();
@@ -576,7 +595,6 @@
 
     els.search()?.addEventListener("input", applySearch);
 
-    // export products
     els.exportProductsCsv()?.addEventListener("click", () => {
       const data = loadLastProducts();
       if (!data.length) return showToast("Brak produktów do eksportu.", "error");
