@@ -9,10 +9,11 @@
   <!-- planGuard fallback: /js/ oraz root -->
   <script>
     (function () {
+      const v = "20260228-3";
       const tryLoad = (src, next) => {
         const s = document.createElement("script");
         s.defer = true;
-        s.src = src;
+        s.src = src + (src.includes("?") ? "&" : "?") + "v=" + v;
         s.onerror = () => next && next();
         document.head.appendChild(s);
       };
@@ -51,18 +52,19 @@
 <div class="wrap">
   <div class="hero-card reveal">
     <span class="badge"><span class="dot"></span> Aktywacja (demo)</span>
-    <div class="h1">Aktywuj dostęp PRO</div>
+    <div class="h1">Aktywuj dostęp</div>
     <div class="p">
-      W demo kliknięcie nadaje PRO (localStorage). Docelowo w tym miejscu będzie weryfikacja płatności
+      W demo kliknięcie nadaje PRO/ELITE (localStorage). Docelowo w tym miejscu będzie weryfikacja płatności
       i automatyczne role.
     </div>
 
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <button class="btn btn-primary" type="button" onclick="activateProDemo()">Aktywuj PRO</button>
+      <button class="btn btn-primary" type="button" onclick="activatePlanDemo('pro')">Aktywuj PRO</button>
+      <button class="btn btn-primary" type="button" onclick="activatePlanDemo('elite')">Aktywuj ELITE</button>
       <a class="btn" href="login.html">Logowanie</a>
-      <a class="btn btn-secondary" href="dashboard.html">Mam już PRO</a>
+      <a class="btn btn-secondary" href="dashboard.html">Mam już dostęp</a>
     </div>
 
     <div class="hr"></div>
@@ -78,13 +80,14 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<!-- assets/app.js fallback: assets/ oraz root -->
+<!-- app.js fallback: assets/ oraz root -->
 <script>
   (function () {
+    const v = "20260228-3";
     const tryLoad = (src, next) => {
       const s = document.createElement("script");
       s.defer = true;
-      s.src = src;
+      s.src = src + (src.includes("?") ? "&" : "?") + "v=" + v;
       s.onerror = () => next && next();
       document.body.appendChild(s);
     };
@@ -93,18 +96,47 @@
 </script>
 
 <script>
-  function activateProDemo(){
-    // jeśli nie zalogowany -> najpierw login
-    if (!(window.QM && QM.isLogged && QM.isLogged())) {
+  function isLoggedIn() {
+    return localStorage.getItem("is_logged_in") === "true";
+  }
+
+  function setPlanEverywhere(planLower) {
+    const p = String(planLower || "").toLowerCase().trim();
+    const normalized = (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+
+    // canonical
+    localStorage.setItem("qm_plan", normalized);
+    localStorage.setItem("qm_plan_v1", JSON.stringify(normalized));
+
+    // legacy compat
+    localStorage.setItem("status", normalized.toUpperCase());
+    localStorage.setItem("plan", normalized.toUpperCase());
+    localStorage.setItem("last_paid_plan", normalized.toUpperCase());
+
+    // pro flag
+    if (normalized === "pro" || normalized === "elite") localStorage.setItem("proStatus", "true");
+    else localStorage.removeItem("proStatus");
+  }
+
+  function activatePlanDemo(planLower){
+    // jeśli nie zalogowany -> login
+    if (!isLoggedIn()) {
       location.href = "login.html?back=" + encodeURIComponent("dashboard.html");
       return;
     }
-    // ustaw PRO i przejdź do panelu
-    if (window.QM && typeof QM.setPlan === "function") {
-      QM.setPlan("PRO");
-    } else {
-      localStorage.setItem("qm_plan", "PRO");
+
+    // ustaw plan spójnie
+    if (window.QM && typeof window.QM.setPlan === "function") {
+      // oczekujemy, że QM.setPlan przyjmie pro/elite; jeśli nie, i tak dopiszemy ręcznie
+      try { window.QM.setPlan(planLower); } catch {}
     }
+    setPlanEverywhere(planLower);
+
+    // w demo ustaw ważność 30 dni
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    localStorage.setItem("plan_expires_at", d.toISOString());
+
     location.href = "dashboard.html";
   }
 
