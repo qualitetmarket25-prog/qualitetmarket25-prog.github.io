@@ -1,15 +1,17 @@
-const CACHE = "qualitet-pwa-v1";
+const CACHE = "qualitet-pwa-v2";
 
-const ASSETS = [
+// Minimalny zestaw (musi istnieć na 100%)
+const CORE = [
   "/",
   "/index.html",
   "/styles.css",
   "/manifest.json",
-
-  // ikony
   "/icons/icon-192.png",
-  "/icons/icon-512-maskable.png",
+  "/icons/icon-512-maskable.png"
+];
 
+// Reszta – opcjonalna (jak nie ma, nie wywali SW)
+const OPTIONAL = [
   // strony
   "/cennik.html",
   "/qualitetmarket.html",
@@ -20,45 +22,72 @@ const ASSETS = [
   "/login.html",
   "/aktywuj-pro.html",
 
-  // js (root)
+  // js (root) – jeśli realnie masz te pliki
   "/app.js",
   "/auth.js",
   "/planGuard.js",
   "/intelligence.js",
   "/blueprints.js",
 
-  // js (folder js - jeśli istnieje)
-  "/js/planGuard.js"
+  // folder js (u Ciebie był 404, więc traktujemy jako opcjonalne)
+  "/js/planGuard.js",
+
+  // favicon (opcjonalnie; jak go nie masz, nie szkodzi)
+  "/favicon.ico"
 ];
+
+async function cacheAddSafe(cache, url) {
+  try {
+    const resp = await fetch(url, { cache: "no-cache" });
+    if (resp.ok) await cache.put(url, resp);
+  } catch (e) {
+    // ignorujemy brak/404/błąd
+  }
+}
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+
+    // CORE: tu chcemy twardo (ale też bez wywalenia całej instalacji)
+    for (const url of CORE) {
+      await cacheAddSafe(cache, url);
+    }
+
+    // OPTIONAL: zawsze bezpiecznie
+    for (const url of OPTIONAL) {
+      await cacheAddSafe(cache, url);
+    }
+  })());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    if (cached) return cached;
 
-      return fetch(event.request)
-        .then((resp) => {
-          const copy = resp.clone();
-          caches.open(CACHE).then((c) => c.put(event.request, copy));
-          return resp;
-        })
-        .catch(() => cached);
-    })
-  );
+    try {
+      const resp = await fetch(event.request);
+      // cache dynamiczny tylko dla plików z tej domeny
+      if (resp && resp.ok && event.request.url.startsWith(self.location.origin)) {
+        const copy = resp.clone();
+        const cache = await caches.open(CACHE);
+        cache.put(event.request, copy);
+      }
+      return resp;
+    } catch (e) {
+      return cached || Response.error();
+    }
+  })());
 });
