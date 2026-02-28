@@ -1,66 +1,136 @@
-/* hurtownie.js — QualitetMarket
+/* hurtownie.js — QualitetMarket (PROD)
    CSV -> produkty + marża + scoring + ranking hurtowni
-   Wymagane ID w HTML:
+   Wymagane ID:
    - input type="file" id="csvFile"
    - table id="resultsTable" z <tbody>
    - div id="supplierRanking"
-   (opcjonalnie) input id="supplierName" (nazwa hurtowni)
+   - div id="supplierSummary"
+   Dodatkowo (PROD):
+   - #qmAnalyzeBtn, #qmClearTableBtn, #qmToast
+   - #qmSearch, #qmExportProductsCsv, #qmExportProductsJson
+   (opcjonalnie) input id="supplierName"
 */
 
 (() => {
-  const LS_KEY = "qm_supplier_scores_v1";
+  "use strict";
 
-  // ===== Helpers =====
+  const LS_KEY = "qm_supplier_scores_v2";
+  const LS_LAST_PRODUCTS = "qm_last_products_v1";
+  const MAX_SCORES = 100;
+
+  // ===== DOM helpers =====
   const $ = (sel) => document.querySelector(sel);
 
-  function toast(msg) {
-    alert(msg); // prosto i pewnie (możesz podmienić na UI)
+  const els = {
+    file: () => $("#csvFile"),
+    supplierName: () => $("#supplierName"),
+    tableBody: () => document.querySelector("#resultsTable tbody"),
+    ranking: () => $("#supplierRanking"),
+    summary: () => $("#supplierSummary"),
+    toast: () => $("#qmToast"),
+    analyzeBtn: () => $("#qmAnalyzeBtn"),
+    clearBtn: () => $("#qmClearTableBtn"),
+    search: () => $("#qmSearch"),
+    exportProductsCsv: () => $("#qmExportProductsCsv"),
+    exportProductsJson: () => $("#qmExportProductsJson"),
+  };
+
+  // ===== UI: toast inline =====
+  function showToast(message, type = "info") {
+    const box = els.toast();
+    if (!box) return;
+    box.style.display = "";
+    box.textContent = message;
+
+    // lekkie różnicowanie (bez zależności od CSS)
+    box.style.opacity = "1";
+    box.style.border = "1px solid rgba(148,163,184,.25)";
+    box.style.background = "rgba(148,163,184,.08)";
+
+    if (type === "error") {
+      box.style.border = "1px solid rgba(239,68,68,.35)";
+      box.style.background = "rgba(239,68,68,.10)";
+    } else if (type === "success") {
+      box.style.border = "1px solid rgba(34,197,94,.30)";
+      box.style.background = "rgba(34,197,94,.10)";
+    }
+
+    // auto hide
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      box.style.opacity = "0";
+      setTimeout(() => {
+        box.style.display = "none";
+        box.style.opacity = "1";
+      }, 250);
+    }, 2600);
   }
 
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function clamp(n, a, b) {
+    return Math.min(b, Math.max(a, n));
+  }
+
+  // ===== Numbers / PLN =====
   function toNumber(raw) {
     if (raw == null) return NaN;
     let s = String(raw).trim();
+    if (!s) return NaN;
 
-    // usuń waluty/spacje
+    // BOM, waluty, spacje
+    s = s.replace(/^\uFEFF/, "");
     s = s.replace(/\s/g, "");
     s = s.replace(/zł|pln|PLN|ZŁ/gi, "");
 
-    // zamień przecinek dziesiętny na kropkę
-    // ale najpierw usuń separatory tysięcy
-    // przykłady: "1 234,50" "1.234,50" "1,234.50"
-    // strategia: jeśli ma przecinek i kropkę, uznaj ostatni znak jako separator dziesiętny
     const hasComma = s.includes(",");
     const hasDot = s.includes(".");
 
     if (hasComma && hasDot) {
-      // jeśli ostatni jest przecinek -> przecinek dziesiętny
+      // ostatni separator traktujemy jako dziesiętny
       if (s.lastIndexOf(",") > s.lastIndexOf(".")) {
         s = s.replace(/\./g, "");
         s = s.replace(",", ".");
       } else {
-        // kropka dziesiętna
         s = s.replace(/,/g, "");
       }
     } else if (hasComma && !hasDot) {
       s = s.replace(",", ".");
     }
 
-    return parseFloat(s);
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : NaN;
   }
 
+  function formatPLN(n) {
+    if (!Number.isFinite(n)) return "–";
+    return `${n.toFixed(2)} zł`;
+  }
+
+  // ===== CSV =====
   function detectDelimiter(text) {
-    const head = text.split(/\r?\n/).slice(0, 5).join("\n");
+    const head = text.split(/\r?\n/).slice(0, 8).join("\n");
     const commas = (head.match(/,/g) || []).length;
     const semis = (head.match(/;/g) || []).length;
     const tabs = (head.match(/\t/g) || []).length;
-    // preferuj najczęstszy
+
     if (tabs > semis && tabs > commas) return "\t";
     if (semis > commas) return ";";
     return ",";
   }
 
-  // Prosty parser CSV z obsługą cudzysłowów
+  // parser z cudzysłowami
   function parseCSV(text) {
+    // usuń BOM
+    text = String(text ?? "").replace(/^\uFEFF/, "");
+
     const delimiter = detectDelimiter(text);
     const rows = [];
     let row = [];
@@ -73,7 +143,6 @@
 
       if (ch === '"') {
         if (inQuotes && next === '"') {
-          // escaped quote ""
           cur += '"';
           i++;
         } else {
@@ -100,13 +169,11 @@
       cur += ch;
     }
 
-    // ostatnia komórka
     if (cur.length || row.length) {
       row.push(cur);
       rows.push(row);
     }
 
-    // trim
     return rows
       .map((r) => r.map((c) => (c == null ? "" : String(c).trim())))
       .filter((r) => r.some((c) => c !== ""));
@@ -115,12 +182,59 @@
   function normalizeHeader(h) {
     return String(h || "")
       .toLowerCase()
+      .trim()
       .replace(/\s+/g, "")
       .replace(/[\.\-_/]/g, "");
   }
 
+  // ===== Column mapping =====
+  const HEADER_SYNONYMS = {
+    name: [
+      "nazwa", "produkt", "product", "name", "towar", "item", "title", "opis", "description"
+    ],
+    wholesale: [
+      "cenahurtowa", "hurt", "hurtowa", "wholesale", "purchase", "kupno", "cena", "netto", "cennanetto",
+      "buyprice", "pricebuy", "cost", "supplierprice"
+    ],
+    retail: [
+      "cenarynkowa", "rynkowa", "retail", "market", "cenadetaliczna", "detal", "brutto", "cenabrutto",
+      "sellprice", "pricesell", "msrp"
+    ],
+  };
+
+  function findIndex(headerNorm, keys) {
+    for (const k of keys) {
+      const idx = headerNorm.findIndex((h) => h === k || h.includes(k));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  }
+
+  function mapColumns(rows) {
+    const header = rows[0].map(normalizeHeader);
+
+    const idxName = findIndex(header, HEADER_SYNONYMS.name);
+    const idxWholesale = findIndex(header, HEADER_SYNONYMS.wholesale);
+    const idxRetail = findIndex(header, HEADER_SYNONYMS.retail);
+
+    // fallback: 0,1,2
+    return {
+      idxName: idxName >= 0 ? idxName : 0,
+      idxWholesale: idxWholesale >= 0 ? idxWholesale : 1,
+      idxRetail: idxRetail >= 0 ? idxRetail : 2,
+      header,
+    };
+  }
+
+  // ===== Scoring =====
+  function computeMarginPct(wholesale, retail) {
+    if (!Number.isFinite(wholesale) || wholesale <= 0) return NaN;
+    if (!Number.isFinite(retail) || retail <= 0) return NaN;
+    return ((retail - wholesale) / wholesale) * 100;
+  }
+
   function scoreMargin(marginPct) {
-    // Możesz zmienić progi; te są agresywne pod e-commerce
+    // agresywne pod e-commerce
     if (marginPct >= 80) return 100;
     if (marginPct >= 50) return 85;
     if (marginPct >= 35) return 70;
@@ -129,156 +243,123 @@
     return 10;
   }
 
-  function computeMarginPct(wholesale, retail) {
-    // marża % liczona od ceny hurtowej (jak miałeś)
-    if (!isFinite(wholesale) || wholesale <= 0) return NaN;
-    if (!isFinite(retail) || retail <= 0) return NaN;
-    return ((retail - wholesale) / wholesale) * 100;
+  function scoreSpread(wholesale, retail) {
+    // spread w PLN - premiuj sensowną kwotę (na reklamy/zwroty/obsługę)
+    const spread = retail - wholesale;
+    if (!Number.isFinite(spread)) return 0;
+    if (spread >= 200) return 20;
+    if (spread >= 100) return 15;
+    if (spread >= 50) return 10;
+    if (spread >= 20) return 6;
+    if (spread >= 10) return 3;
+    return 0;
   }
 
+  function computeScore(wholesale, retail, marginPct) {
+    // baza: marża (0..100), bonus: spread (0..20), sanity: kara za ujemne / podejrzane
+    const base = scoreMargin(marginPct);
+    const spread = scoreSpread(wholesale, retail);
+
+    // kara jeśli retail <= wholesale
+    const penalty = retail <= wholesale ? 25 : 0;
+
+    return clamp(Math.round(base + spread - penalty), 0, 100);
+  }
+
+  // ===== LocalStorage ranking =====
   function loadScores() {
     try {
       const raw = localStorage.getItem(LS_KEY);
-      return raw ? JSON.parse(raw) : [];
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
     } catch {
       return [];
     }
   }
 
   function saveScores(list) {
-    localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 50))); // limit
+    localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, MAX_SCORES)));
   }
 
-  function formatPLN(n) {
-    if (!isFinite(n)) return "-";
-    return `${n.toFixed(2)} zł`;
+  function normalizeSupplierName(s) {
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .slice(0, 80);
   }
 
-  // ===== Główna funkcja =====
-  window.processCSV = async function processCSV() {
-    const fileInput = $("#csvFile");
-    const file = fileInput?.files?.[0];
+  function upsertScore(scores, entry) {
+    // deduplikacja po supplierName (ostatni wynik wygrywa)
+    const key = normalizeSupplierName(entry.supplierName);
+    const without = scores.filter((x) => normalizeSupplierName(x.supplierName) !== key);
+    return [entry, ...without].slice(0, MAX_SCORES);
+  }
 
-    if (!file) {
-      toast("Wybierz plik CSV.");
-      return;
+  // ===== Products memory (for search/export) =====
+  function saveLastProducts(products) {
+    try {
+      localStorage.setItem(LS_LAST_PRODUCTS, JSON.stringify(products.slice(0, 5000)));
+    } catch { /* ignore */ }
+  }
+
+  function loadLastProducts() {
+    try {
+      const raw = localStorage.getItem(LS_LAST_PRODUCTS);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
     }
+  }
 
-    // opcjonalna nazwa hurtowni (jeśli masz input w HTML)
-    const supplierName = ($("#supplierName")?.value || file.name || "Hurtownia").trim();
-
-    const text = await file.text();
-    const rows = parseCSV(text);
-
-    if (rows.length < 2) {
-      toast("CSV jest pusty albo ma zły format.");
-      return;
-    }
-
-    // Wykrywanie kolumn po nagłówku
-    const header = rows[0].map(normalizeHeader);
-
-    // Możliwe nazwy kolumn:
-    const nameIdx =
-      header.findIndex((h) => ["nazwa", "produkt", "product", "name"].includes(h));
-    const wholesaleIdx =
-      header.findIndex((h) => ["cenahurtowa", "hurt", "wholesale", "cena"].includes(h));
-    const retailIdx =
-      header.findIndex((h) => ["cenarynkowa", "rynkowa", "retail", "market", "cenadetaliczna", "detal"].includes(h));
-
-    // Jeśli nie wykryło – fallback: 0,1,2
-    const idxName = nameIdx >= 0 ? nameIdx : 0;
-    const idxWholesale = wholesaleIdx >= 0 ? wholesaleIdx : 1;
-    const idxRetail = retailIdx >= 0 ? retailIdx : 2;
-
-    const results = [];
-    let totalScore = 0;
-    let productCount = 0;
-
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      const name = (r[idxName] || "").trim();
-      const wholesale = toNumber(r[idxWholesale]);
-      const retail = toNumber(r[idxRetail]);
-
-      if (!name) continue;
-      if (!isFinite(wholesale) || !isFinite(retail)) continue;
-
-      const margin = computeMarginPct(wholesale, retail);
-      if (!isFinite(margin)) continue;
-
-      const score = scoreMargin(margin);
-
-      totalScore += score;
-      productCount++;
-
-      results.push({
-        name,
-        wholesale,
-        retail,
-        marginPct: margin,
-        score
-      });
-    }
-
-    if (!results.length) {
-      toast("Nie udało się odczytać produktów. Sprawdź kolumny CSV.");
-      return;
-    }
-
-    // sort: score desc, potem marża desc
-    results.sort((a, b) => (b.score - a.score) || (b.marginPct - a.marginPct));
-
-    displayResults(results);
-
-    const avgScore = productCount ? (totalScore / productCount) : 0;
-
-    // zapis do rankingu hurtowni
-    const scores = loadScores();
-    const entry = {
-      supplierName,
-      avgScore: Number(avgScore.toFixed(2)),
-      products: productCount,
-      ts: new Date().toISOString()
-    };
-
-    scores.unshift(entry);
-    saveScores(scores);
-
-    displaySupplierRanking(scores, entry);
-  };
-
-  // ===== Render tabeli =====
-  function displayResults(results) {
-    const tbody = document.querySelector("#resultsTable tbody");
+  // ===== Rendering =====
+  function renderResults(products, { highlightTop = 10 } = {}) {
+    const tbody = els.tableBody();
     if (!tbody) return;
 
     tbody.innerHTML = "";
 
-    results.forEach((p) => {
+    products.forEach((p, i) => {
       const tr = document.createElement("tr");
+      if (i < highlightTop) tr.style.background = "rgba(34,197,94,.08)";
 
       tr.innerHTML = `
         <td>${escapeHtml(p.name)}</td>
         <td>${formatPLN(p.wholesale)}</td>
         <td>${formatPLN(p.retail)}</td>
-        <td>${p.marginPct.toFixed(2)}%</td>
-        <td>${p.score}</td>
+        <td>${Number.isFinite(p.marginPct) ? p.marginPct.toFixed(2) + "%" : "–"}</td>
+        <td><strong>${p.score}</strong></td>
       `;
-
       tbody.appendChild(tr);
     });
   }
 
-  // ===== Ranking hurtowni =====
-  function displaySupplierRanking(scores, lastEntry) {
-    const box = $("#supplierRanking");
+  function renderSupplierSummary(entry, bestProduct) {
+    const box = els.summary();
     if (!box) return;
 
-    // top 5 po avgScore
-    const top = [...scores]
-      .sort((a, b) => b.avgScore - a.avgScore)
-      .slice(0, 5);
+    box.innerHTML = `
+      <div style="display:grid;gap:6px;">
+        <div><strong>${escapeHtml(entry.supplierName)}</strong></div>
+        <div>Produkty: <strong>${entry.products}</strong></div>
+        <div>Średni score: <strong>${entry.avgScore}/100</strong></div>
+        <div>Najlepszy produkt: <strong>${bestProduct ? escapeHtml(bestProduct.name) : "–"}</strong></div>
+        <div style="color:#94a3b8;">Zapis: ${new Date(entry.ts).toLocaleString("pl-PL")}</div>
+      </div>
+    `;
+  }
+
+  function renderSupplierRanking(scores, lastEntry) {
+    const box = els.ranking();
+    if (!box) return;
+
+    if (!scores.length) {
+      box.innerHTML = `<div class="note">Brak danych. Wczytaj pierwszą hurtownię.</div>`;
+      return;
+    }
+
+    const top = [...scores].sort((a, b) => b.avgScore - a.avgScore).slice(0, 8);
 
     box.innerHTML = `
       <div class="card soft">
@@ -289,7 +370,7 @@
         </div>
 
         <div style="margin-top:14px;">
-          <strong>TOP 5 hurtowni (wg score):</strong>
+          <strong>TOP hurtowni (wg avg score):</strong>
           <ol style="margin:8px 0 0 18px;color:#cbd5e1;">
             ${top.map((x) => `
               <li>
@@ -301,44 +382,235 @@
         </div>
 
         <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-sm" id="qmClearRanking">Wyczyść ranking</button>
-          <button class="btn btn-sm btn-secondary" id="qmExportRanking">Eksport JSON</button>
+          <button class="btn btn-sm" type="button" id="qmClearRanking">Wyczyść ranking</button>
+          <button class="btn btn-sm btn-secondary" type="button" id="qmExportRankingJson">Eksport JSON</button>
+          <button class="btn btn-sm btn-secondary" type="button" id="qmExportRankingCsv">Eksport CSV</button>
         </div>
       </div>
     `;
 
-    // akcje
     $("#qmClearRanking")?.addEventListener("click", () => {
       localStorage.removeItem(LS_KEY);
-      displaySupplierRanking([], { supplierName: "-", avgScore: 0, products: 0 });
+      renderSupplierRanking([], { supplierName: "–", avgScore: 0, products: 0, ts: new Date().toISOString() });
+      showToast("Ranking wyczyszczony.", "success");
     });
 
-    $("#qmExportRanking")?.addEventListener("click", () => {
+    $("#qmExportRankingJson")?.addEventListener("click", () => {
       const data = loadScores();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "qm-ranking-hurtowni.json";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 800);
+      downloadBlob(JSON.stringify(data, null, 2), "application/json", "qm-ranking-hurtowni.json");
+      showToast("Wyeksportowano JSON z rankingiem.", "success");
+    });
+
+    $("#qmExportRankingCsv")?.addEventListener("click", () => {
+      const data = loadScores();
+      const csv = toCsv(
+        ["supplierName", "avgScore", "products", "ts"],
+        data.map((x) => [x.supplierName, x.avgScore, x.products, x.ts])
+      );
+      downloadBlob(csv, "text/csv;charset=utf-8", "qm-ranking-hurtowni.csv");
+      showToast("Wyeksportowano CSV z rankingiem.", "success");
     });
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  // ===== Export helpers =====
+  function toCsv(headers, rows) {
+    const esc = (v) => {
+      const s = String(v ?? "");
+      if (/[",\n\r;]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+      return s;
+    };
+    const sep = ";";
+    return [
+      headers.map(esc).join(sep),
+      ...rows.map((r) => r.map(esc).join(sep))
+    ].join("\n");
   }
 
-  // Na start pokaż ranking jeśli jest
+  function downloadBlob(content, mime, filename) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 800);
+  }
+
+  function exportProductsCsv(products) {
+    const csv = toCsv(
+      ["name", "wholesale", "retail", "marginPct", "score"],
+      products.map((p) => [
+        p.name,
+        Number.isFinite(p.wholesale) ? p.wholesale.toFixed(2) : "",
+        Number.isFinite(p.retail) ? p.retail.toFixed(2) : "",
+        Number.isFinite(p.marginPct) ? p.marginPct.toFixed(2) : "",
+        p.score
+      ])
+    );
+    downloadBlob(csv, "text/csv;charset=utf-8", "qm-produkty.csv");
+  }
+
+  function exportProductsJson(products) {
+    downloadBlob(JSON.stringify(products, null, 2), "application/json", "qm-produkty.json");
+  }
+
+  // ===== Debounce search =====
+  function debounce(fn, wait = 180) {
+    let t = null;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }
+
+  // ===== Main pipeline =====
+  async function processCSV() {
+    const file = els.file()?.files?.[0];
+    if (!file) {
+      showToast("Wybierz plik CSV.", "error");
+      return;
+    }
+
+    const supplierName =
+      (els.supplierName()?.value || file.name || "Hurtownia").trim() || "Hurtownia";
+
+    let text = "";
+    try {
+      text = await file.text();
+    } catch {
+      showToast("Nie mogę odczytać pliku.", "error");
+      return;
+    }
+
+    const rows = parseCSV(text);
+    if (rows.length < 2) {
+      showToast("CSV jest pusty albo ma zły format.", "error");
+      return;
+    }
+
+    const { idxName, idxWholesale, idxRetail } = mapColumns(rows);
+
+    const products = [];
+    let sumScore = 0;
+
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+
+      const name = String(r[idxName] ?? "").trim();
+      if (!name) continue;
+
+      const wholesale = toNumber(r[idxWholesale]);
+      const retail = toNumber(r[idxRetail]);
+
+      if (!Number.isFinite(wholesale) || !Number.isFinite(retail)) continue;
+
+      const marginPct = computeMarginPct(wholesale, retail);
+      if (!Number.isFinite(marginPct)) continue;
+
+      const score = computeScore(wholesale, retail, marginPct);
+
+      products.push({ name, wholesale, retail, marginPct, score });
+      sumScore += score;
+    }
+
+    if (!products.length) {
+      showToast("Nie udało się odczytać produktów. Sprawdź nagłówki i kolumny w CSV.", "error");
+      return;
+    }
+
+    // sort: score desc, margin desc, retail desc (stabilniej)
+    products.sort((a, b) =>
+      (b.score - a.score) ||
+      (b.marginPct - a.marginPct) ||
+      (b.retail - a.retail)
+    );
+
+    // render tabela
+    renderResults(products, { highlightTop: 10 });
+    saveLastProducts(products);
+
+    const avgScore = products.length ? (sumScore / products.length) : 0;
+
+    const entry = {
+      supplierName,
+      avgScore: Number(avgScore.toFixed(2)),
+      products: products.length,
+      ts: new Date().toISOString(),
+    };
+
+    const bestProduct = products[0] || null;
+    renderSupplierSummary(entry, bestProduct);
+
+    // ranking hurtowni
+    const scores = upsertScore(loadScores(), entry);
+    saveScores(scores);
+    renderSupplierRanking(scores, entry);
+
+    showToast(`Gotowe: ${products.length} produktów. Śr. score: ${entry.avgScore}/100`, "success");
+  }
+
+  // ===== Clear table =====
+  function clearTable() {
+    const tbody = els.tableBody();
+    if (tbody) tbody.innerHTML = "";
+    const sum = els.summary();
+    if (sum) sum.innerHTML = "";
+    localStorage.removeItem(LS_LAST_PRODUCTS);
+    showToast("Wyniki wyczyszczone.", "success");
+  }
+
+  // ===== Bindings =====
+  function bind() {
+    els.analyzeBtn()?.addEventListener("click", processCSV);
+    els.clearBtn()?.addEventListener("click", clearTable);
+
+    // search
+    const applySearch = debounce(() => {
+      const q = String(els.search()?.value ?? "").trim().toLowerCase();
+      const all = loadLastProducts();
+      const filtered = q
+        ? all.filter((p) => String(p.name).toLowerCase().includes(q))
+        : all;
+      renderResults(filtered, { highlightTop: 10 });
+    }, 160);
+
+    els.search()?.addEventListener("input", applySearch);
+
+    // export products
+    els.exportProductsCsv()?.addEventListener("click", () => {
+      const data = loadLastProducts();
+      if (!data.length) return showToast("Brak produktów do eksportu.", "error");
+      exportProductsCsv(data);
+      showToast("Wyeksportowano produkty do CSV.", "success");
+    });
+
+    els.exportProductsJson()?.addEventListener("click", () => {
+      const data = loadLastProducts();
+      if (!data.length) return showToast("Brak produktów do eksportu.", "error");
+      exportProductsJson(data);
+      showToast("Wyeksportowano produkty do JSON.", "success");
+    });
+  }
+
+  // ===== Init =====
   document.addEventListener("DOMContentLoaded", () => {
+    bind();
+
+    // pokaż ranking jeśli jest
     const scores = loadScores();
     if (scores.length) {
-      displaySupplierRanking(scores, scores[0]);
+      renderSupplierRanking(scores, scores[0]);
+    } else {
+      renderSupplierRanking([], { supplierName: "–", avgScore: 0, products: 0, ts: new Date().toISOString() });
+    }
+
+    // przywróć ostatnie produkty
+    const products = loadLastProducts();
+    if (products.length) {
+      renderResults(products, { highlightTop: 10 });
     }
   });
+
+  // compatibility (jeśli gdzieś jest onclick w starym HTML)
+  window.processCSV = processCSV;
 })();
