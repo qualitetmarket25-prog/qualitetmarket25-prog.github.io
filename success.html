@@ -1,149 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Płatność zakończona</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111111" />
+  <title>Płatność OK</title>
 
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="icons/icon-192.png" />
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0b0f14" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
-
 <body>
-<section class="section">
-  <div class="container">
-    <div class="card highlight" id="box">
-      <h2>⏳ Weryfikacja płatności...</h2>
-      <p style="margin-top:10px;color:#cbd5e1;">Proszę czekać.</p>
-    </div>
-  </div>
-</section>
+  <main class="container">
+    <h1>Sukces ✅</h1>
+    <p id="msg">Aktywuję plan…</p>
+  </main>
 
-<script>
-  // -------- helpers --------
-  function getParam(name){
-    const url = new URL(window.location.href);
-    return url.searchParams.get(name);
-  }
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const raw = (params.get("plan") || "pro").toLowerCase();
+      const plan = (raw === "elite" || raw === "pro" || raw === "basic") ? raw : "pro";
 
-  function addDaysISO(days){
-    const d = new Date();
-    d.setDate(d.getDate() + days);
-    return d.toISOString();
-  }
+      localStorage.setItem("qm_plan_v1", plan);
+      localStorage.setItem("qm_status_v1", plan);
+      localStorage.setItem("qm_plan_updated_at", String(Date.now()));
 
-  function normalizePlan(raw){
-    const p = String(raw || "").trim().toLowerCase();
-    if (p === "pro" || p === "premium") return "pro";
-    if (p === "elite") return "elite";
-    return "";
-  }
+      document.getElementById("msg").textContent = "Plan ustawiony: " + plan.toUpperCase() + " ✅";
 
-  function setPlanEverywhere(planLower){
-    // SOURCE OF TRUTH
-    localStorage.setItem("qm_plan", planLower);
-
-    // compat: guard v3 uses qm_plan_v1 as JSON string
-    localStorage.setItem("qm_plan_v1", JSON.stringify(planLower));
-
-    // legacy compat (uppercase)
-    localStorage.setItem("status", planLower.toUpperCase());
-    localStorage.setItem("plan", planLower.toUpperCase());
-    localStorage.setItem("last_paid_plan", planLower.toUpperCase());
-
-    // legacy pro flag
-    if (planLower === "pro" || planLower === "elite") {
-      localStorage.setItem("proStatus", "true");
-    } else {
-      localStorage.removeItem("proStatus");
-    }
-  }
-
-  // -------- inputs --------
-  const planParam = getParam("plan");     // pro|PRO|elite|ELITE (zaakceptujemy przez normalize)
-  const token = getParam("token");        // demo token
-  const demo = (getParam("demo") === "1");// test bez tokena
-  const box = document.getElementById("box");
-
-  const plan = normalizePlan(planParam);
-
-  // ====== TOKENY (demo) ======
-  const VALID_TOKENS = {
-    pro: "PRO2026SZEF",
-    elite: "ELITE2026SZEF"
-  };
-
-  // -------- validation --------
-  const hasParams = !!planParam || !!token;
-  const okPlan = (plan === "pro" || plan === "elite");
-  const okToken = okPlan && token === VALID_TOKENS[plan];
-  const ok = okToken || (demo && okPlan);
-
-  if (!hasParams) {
-    box.innerHTML = `
-      <h2>ℹ️ Brak parametrów aktywacji</h2>
-      <p style="margin-top:10px;color:#cbd5e1;">
-        Ta strona działa jako zakończenie płatności i wymaga linku z parametrami.
-      </p>
-      <p style="margin-top:10px;color:#94a3b8;">
-        Test: <code>success.html?plan=pro&token=PRO2026SZEF</code>
-      </p>
-      <div style="margin-top:20px;">
-        <a href="cennik.html" class="btn btn-primary">Wróć do cennika</a>
-      </div>
-    `;
-  } else if (ok) {
-    // ✅ zapis planu spójnie (małe litery)
-    setPlanEverywhere(plan);
-
-    // auth / meta
-    localStorage.setItem("is_logged_in", "true");
-    localStorage.setItem("paid_at", new Date().toISOString());
-
-    // ważność planu 30 dni
-    localStorage.setItem("plan_expires_at", addDaysISO(30));
-
-    box.innerHTML = `
-      <h2>✅ Płatność zakończona</h2>
-      <p style="margin-top:10px;color:#cbd5e1;">
-        Aktywowano plan: <strong style="color:#fff;">${plan.toUpperCase()}</strong>
-      </p>
-      <p style="margin-top:10px;color:#94a3b8;">Trwa przekierowanie do panelu...</p>
-    `;
-
-    setTimeout(() => {
-      window.location.href = "dashboard.html";
-    }, 900);
-
-  } else {
-    box.innerHTML = `
-      <h2>❌ Weryfikacja nieudana</h2>
-      <p style="margin-top:10px;color:#cbd5e1;">
-        Parametry są niepoprawne lub token nie pasuje do planu.
-      </p>
-      <p style="margin-top:10px;color:#94a3b8;">
-        Otrzymano: plan=<code>${(planParam||"").replaceAll("<","&lt;")}</code>,
-        token=<code>${(token||"").replaceAll("<","&lt;")}</code>
-      </p>
-      <div style="margin-top:20px;">
-        <a href="cennik.html" class="btn btn-primary">Wróć do cennika</a>
-      </div>
-    `;
-  }
-</script>
-
-<!-- Service Worker -->
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("service-worker.js");
-    });
-  }
-</script>
-
+      setTimeout(() => location.replace("/dashboard.html"), 600);
+    })();
+  </script>
 </body>
 </html>
