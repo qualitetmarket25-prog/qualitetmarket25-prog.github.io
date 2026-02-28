@@ -40,6 +40,7 @@
       <a href="cennik.html">Plany</a>
       <a href="qualitetmarket.html">QualitetMarket</a>
       <a class="active" href="intelligence.html">Intelligence</a>
+      <a href="listing.html">Listing</a>
       <a href="blueprints.html">Blueprints</a>
       <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
       <a href="dashboard.html" data-auth-only>Dashboard</a>
@@ -65,6 +66,8 @@
 
     <div class="hero-cta">
       <a class="btn btn-secondary" href="hurtownie.html">Zaciągnij z Hurtowni</a>
+      <a class="btn" href="qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="listing.html">Listing</a>
       <a class="btn" href="blueprints.html">Blueprints</a>
       <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
       <a class="btn" href="cennik.html">Upgrade planu</a>
@@ -133,6 +136,8 @@
           <button class="btn" type="button" onclick="resetCalc()">Wyczyść</button>
           <button class="btn btn-secondary" type="button" id="qmCopyResultBtn">Kopiuj wynik</button>
           <button class="btn" type="button" id="qmTargetPriceBtn">Ustaw cenę pod target</button>
+          <!-- ✅ NOWE: 1 klik do Listing -->
+          <button class="btn btn-primary" type="button" id="qmGoListingBtn">Zrób Listing</button>
         </div>
 
         <div class="hr"></div>
@@ -232,6 +237,7 @@
     window.location.href = "login.html";
   }
 
+  // CTA w nav: guest vs logged
   (function () {
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
@@ -333,6 +339,7 @@
     setAudit("—");
   }
 
+  // ✅ GLOBAL COST PRESET (PRIVATE) — Ctrl+Shift+K
   (function setupGlobalCosts(){
     const LS_COST_PRESET = "qm_cost_preset_v1";
 
@@ -384,7 +391,7 @@
       const ads = prompt("Domyślna reklama:", current.ads);
       if (ads === null) return;
 
-      const risk = prompt("Domyślne ryzyko:", current.risk);
+      const risk = prompt("Domyślna ryzyko:", current.risk);
       if (risk === null) return;
 
       setPreset({
@@ -400,9 +407,12 @@
     });
 
     document.addEventListener("DOMContentLoaded", () => applyPreset(false));
+
+    // expose for prefill
     window.qmApplyPreset = applyPreset;
   })();
 
+  // ✅ PREFILL z QualitetMarket → Intelligence
   (function prefillFromQualitetMarket(){
     const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
 
@@ -412,15 +422,16 @@
       payload = raw ? JSON.parse(raw) : null;
     } catch { payload = null; }
 
-    if (!payload || (!payload.name && !Number.isFinite(Number(payload.wholesale)) && !Number.isFinite(Number(payload.retail)))) return;
+    // pozwól na prefill nawet jeśli name puste, ale ceny są
+    if (!payload || (!payload.name && !isFinite(Number(payload.wholesale)) && !isFinite(Number(payload.retail)))) return;
 
     const pName = document.getElementById("pName");
     const buy   = document.getElementById("buy");
     const sell  = document.getElementById("sell");
 
     if (pName) pName.value = String(payload.name || "");
-    if (buy && Number.isFinite(Number(payload.wholesale))) buy.value = Number(payload.wholesale).toFixed(2);
-    if (sell && Number.isFinite(Number(payload.retail))) sell.value = Number(payload.retail).toFixed(2);
+    if (buy && isFinite(Number(payload.wholesale))) buy.value = Number(payload.wholesale).toFixed(2);
+    if (sell && isFinite(Number(payload.retail))) sell.value = Number(payload.retail).toFixed(2);
 
     try { window.qmApplyPreset && window.qmApplyPreset(false); } catch {}
 
@@ -437,6 +448,7 @@
     localStorage.removeItem(LS_INTEL_PREFILL);
   })();
 
+  // ✅ Kopiuj wynik do schowka (listing / notatki)
   (function bindCopy(){
     const btn = document.getElementById("qmCopyResultBtn");
     if (!btn) return;
@@ -466,6 +478,7 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
+  // ✅ Ustaw cenę sprzedaży pod target (marża% lub profit zł)
   (function bindTarget(){
     const btn = document.getElementById("qmTargetPriceBtn");
     if (!btn) return;
@@ -507,6 +520,35 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
+  // ✅ 1 klik: Intelligence → Listing Generator
+  (function bindListing(){
+    const btn = document.getElementById("qmGoListingBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const name = (document.getElementById("pName").value || "").trim();
+      const wholesale = Number(document.getElementById("buy").value);
+      const retail = Number(document.getElementById("sell").value);
+
+      if (!name) return showToast("Wpisz nazwę produktu.", "error");
+
+      localStorage.setItem("qm_listing_prefill_v1", JSON.stringify({
+        channel: "allegro",
+        name,
+        wholesale: isFinite(wholesale) ? wholesale : null,
+        retail: isFinite(retail) ? retail : null,
+        condition: "nowe",
+        shipping: "tak",
+        city: "",
+        features: "",
+        notes: ""
+      }));
+
+      window.location.href = "listing.html";
+    });
+  })();
+
+  // mobilne menu (hamburger)
   (function () {
     const root = document.querySelector("[data-nav-root]");
     const btn = document.querySelector("[data-nav-toggle]");
