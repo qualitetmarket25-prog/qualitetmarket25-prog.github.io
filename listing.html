@@ -74,6 +74,9 @@
       <a class="btn" href="qualitetmarket.html">Global TOP</a>
       <button class="btn btn-primary" type="button" id="btnGenerate">Generuj</button>
       <button class="btn" type="button" id="btnClear">Wyczyść</button>
+      <!-- ✅ NOWE: 1 klik do CRM -->
+      <button class="btn btn-primary" type="button" id="btnSaveCrm">Zapisz do CRM</button>
+      <a class="btn" href="dashboard.html" data-auth-only>Otwórz CRM</a>
     </div>
 
     <div class="hr"></div>
@@ -228,7 +231,15 @@
     window.location.href = "login.html";
   }
 
+  // auth CTA
+  (function () {
+    const logged = localStorage.getItem("is_logged_in") === "true";
+    document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
+    document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
+  })();
+
   const LS_PREFILL = "qm_listing_prefill_v1";
+  const LS_CRM = "qm_crm_v1";
 
   const $ = (s) => document.querySelector(s);
   const n = (v) => { v = Number(v); return isFinite(v) ? v : 0; };
@@ -250,11 +261,9 @@
 
   function roundToPsychPrice(x){
     if (!isFinite(x) || x <= 0) return 0;
-    // psychologiczne końcówki: .99 / .90
     const base = Math.max(1, x);
     const floor = Math.floor(base);
     const frac = base - floor;
-    // jeśli < .50 => .99, jeśli >= .50 => .90
     const out = floor + (frac < 0.5 ? 0.99 : 0.90);
     return Math.round(out * 100) / 100;
   }
@@ -272,16 +281,9 @@
     const m = n(market);
     const b = n(buy);
 
-    // baza: rynek minus discount
     let p = m > 0 ? (m * (1 - strat.discountPct)) : 0;
-
-    // jeśli brak rynku: użyj prostej reguły: buy * 2.7 (popularny sweet spot dla drobnicy)
     if (p <= 0 && b > 0) p = b * 2.7;
-
-    // minimalna ochrona marży: przynajmniej +35% na zakup (jeśli się da)
     if (b > 0) p = Math.max(p, b * 1.35);
-
-    // wymuszona cena
     if (isFinite(Number(forcedPrice)) && Number(forcedPrice) > 0) p = Number(forcedPrice);
 
     return { price: roundToPsychPrice(p), strat };
@@ -296,13 +298,26 @@
   }
 
   function cleanTokens(s){
-    return String(s || "")
+    return String(s || "").replace(/\s+/g, " ").trim();
+  }
+
+  function buildTags(name, featuresArr, channel){
+    const base = cleanTokens(name)
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
       .replace(/\s+/g, " ")
       .trim();
+
+    const words = base.split(" ").filter(w => w.length >= 3).slice(0, 8);
+    const extra = (featuresArr || []).map(x=> cleanTokens(x).toLowerCase()).filter(Boolean).slice(0, 5);
+    const all = Array.from(new Set([...words, ...extra])).slice(0, 12);
+
+    if (channel === "fb") return all.map(w => "#" + w.replace(/\s+/g,"")).join(" ");
+    if (channel === "vinted") return all.join(", ");
+    return all.join(", ");
   }
 
   function buildCopy({ channel, name, condition, shipping, city, price, buy, features, notes }){
-    const tokens = [];
     const f = (features || "").split(",").map(x=> cleanTokens(x)).filter(Boolean).slice(0,3);
     const note = cleanTokens(notes);
 
@@ -313,7 +328,6 @@
 
     const shipLabel = shipping === "tak" ? "Wysyłka + odbiór" : "Odbiór osobisty";
 
-    // tytuł zależny od kanału (krótki, wyszukiwalny)
     const baseName = cleanTokens(name).slice(0, 70);
     const t =
       channel === "allegro" ? `${baseName} • ${condLabel}` :
@@ -321,7 +335,6 @@
       channel === "fb" ? `${baseName} (${condLabel})` :
       `${baseName} • ${condLabel}`;
 
-    // bullets (najlepiej działają 3–6)
     const bullets = [
       `Stan: ${condLabel}`,
       shipLabel + (city ? ` • ${city}` : ""),
@@ -332,7 +345,6 @@
       note ? `Uwagi: ${note}` : null
     ].filter(Boolean);
 
-    // opis zależny od kanału (Allegro bardziej formalne, FB bardziej ludzkie)
     let desc = "";
     if (channel === "allegro") {
       desc =
@@ -364,7 +376,6 @@ ${shipLabel}${city ? " • " + city : ""}
 
 ${note ? note + "\n\n" : ""}Odbiór możliwy dziś/jutro. Proszę pisać priv.`;
     } else {
-      // vinted
       desc =
 `${baseName}
 
@@ -383,22 +394,6 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
       desc,
       tags
     };
-  }
-
-  function buildTags(name, featuresArr, channel){
-    const base = cleanTokens(name)
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}\s]/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    const words = base.split(" ").filter(w => w.length >= 3).slice(0, 8);
-    const extra = (featuresArr || []).map(x=> cleanTokens(x).toLowerCase()).filter(Boolean).slice(0, 5);
-    const all = Array.from(new Set([...words, ...extra])).slice(0, 12);
-
-    if (channel === "fb") return all.map(w => "#" + w.replace(/\s+/g,"")).join(" ");
-    if (channel === "vinted") return all.join(", ");
-    return all.join(", ");
   }
 
   function writeOutputs(o){
@@ -430,7 +425,7 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
     const features = $("#features").value;
     const notes = $("#notes").value;
 
-    if (!name) return toast("Wpisz nazwę produktu.", "error");
+    if (!name) { toast("Wpisz nazwę produktu.", "error"); return null; }
 
     const { price, strat } = suggestPrice({ channel, market, buy, forcedPrice });
     const m = computeMargin(buy, price, channel);
@@ -442,12 +437,13 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
     const copy = buildCopy({ channel, name, condition, shipping, city, price, buy, features, notes });
     writeOutputs(copy);
 
-    // zapisz “ostatni listing” (żeby wrócić)
     localStorage.setItem("qm_last_listing_v1", JSON.stringify({
       channel, name, condition, shipping, city, buy, market, forcedPrice, features, notes
     }));
 
     toast("Wygenerowano listing.", "success");
+
+    return { channel, name, condition, shipping, city, buy, market, forcedPrice, features, notes, price, copy };
   }
 
   function clearAll(){
@@ -463,7 +459,6 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
   }
 
   function loadPrefill(){
-    // 1) prefill z Intelligence
     let p = null;
     try {
       const raw = localStorage.getItem(LS_PREFILL);
@@ -486,7 +481,6 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
       return;
     }
 
-    // 2) fallback: ostatnio użyte
     try {
       const raw = localStorage.getItem("qm_last_listing_v1");
       const last = raw ? JSON.parse(raw) : null;
@@ -503,6 +497,68 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
         if (last.notes) $("#notes").value = last.notes;
       }
     } catch {}
+  }
+
+  // ✅ NOWE: CRM helpers
+  function loadCRM(){
+    try {
+      const raw = localStorage.getItem(LS_CRM);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function saveCRM(list){
+    localStorage.setItem(LS_CRM, JSON.stringify(list));
+  }
+  function uid(){
+    return "i_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+  }
+
+  function saveToCrm(){
+    // upewnij się, że listing jest wygenerowany
+    const res = generate();
+    if (!res) return;
+
+    const item = {
+      id: uid(),
+      ts: Date.now(),
+      name: res.name,
+      supplier: "",
+      buy: n(res.buy),
+      price: n(res.price) || n(res.market) || 0,
+      channel: res.channel,
+      status: "listed",
+      link: "",
+      soldPrice: 0,
+      notes:
+`[LISTING]
+Kanał: ${res.channel}
+Stan: ${res.condition}
+Wysyłka: ${res.shipping}
+Miasto: ${res.city || "—"}
+
+Tytuł:
+${$("#outTitle").value || ""}
+
+Bullets:
+${$("#outBullets").value || ""}
+
+Opis:
+${$("#outDesc").value || ""}
+
+Tagi:
+${$("#outTags").value || ""}
+
+Uwagi:
+${res.notes || "—"}`.trim()
+    };
+
+    const list = loadCRM();
+    list.unshift(item);
+    saveCRM(list);
+
+    toast("Zapisano do CRM (status: Wystawione).", "success");
+    window.location.href = "dashboard.html";
   }
 
   function bind(){
@@ -524,7 +580,9 @@ Tagi: ${$("#outTags").value}`;
       copyText(text);
     });
 
-    // auto-generate po zmianie kanału, jeśli jest nazwa
+    // ✅ NOWE: Zapis do CRM
+    $("#btnSaveCrm").addEventListener("click", saveToCrm);
+
     $("#channel").addEventListener("change", ()=> {
       if (cleanTokens($("#name").value)) generate();
     });
