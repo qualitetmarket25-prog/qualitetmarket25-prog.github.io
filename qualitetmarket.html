@@ -46,7 +46,6 @@
 
       <div class="nav-links-sep"></div>
 
-      <!-- CTA (podmieniane przez JS) -->
       <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
       <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
@@ -105,7 +104,7 @@
     </div>
   </div>
 
-  <!-- ✅ NOWE: GLOBAL TOP z Hurtowni -->
+  <!-- ✅ GLOBAL TOP z Hurtowni -->
   <div class="section">
     <div class="section-title reveal">
       <h2>TOP produkty globalnie (ze wszystkich hurtowni)</h2>
@@ -136,6 +135,9 @@
               <th>Cena rynkowa</th>
               <th>Marża %</th>
               <th>Score</th>
+              <th data-private-col>Twoja cena</th>
+              <th data-private-col>Zysk</th>
+              <th>Akcja</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -144,6 +146,7 @@
 
       <div class="note" style="margin-top:10px;">
         Wybór per produkt: najlepszy <strong>score</strong>, a przy remisie niższa <strong>cena hurtowa</strong>.
+        <span style="color:#94a3b8;">Tryb prywatny: Ctrl+Shift+P • Ustaw marżę: Ctrl+Shift+M</span>
       </div>
     </div>
   </div>
@@ -229,13 +232,11 @@
     window.location.href = "login.html";
   }
 
-  // CTA w nav: guest vs logged
   (function () {
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
     document.querySelectorAll("[data-auth-only]").forEach(el => el.style.display = logged ? "" : "none");
 
-    // Jeśli nie ELITE, chowamy elementy ELITE (UX). PlanGuard też to robi w nav.
     const plan = (localStorage.getItem("status") || "BASIC").toUpperCase();
     const safePlan = (plan === "PRO" || plan === "ELITE") ? plan : "BASIC";
     if (safePlan !== "ELITE") {
@@ -243,7 +244,6 @@
     }
   })();
 
-  // mobilne menu (hamburger)
   (function () {
     const root = document.querySelector("[data-nav-root]");
     const btn = document.querySelector("[data-nav-toggle]");
@@ -269,12 +269,15 @@
   })();
 </script>
 
-<!-- ✅ NOWE: Global TOP logic (bez nowych plików) -->
+<!-- ✅ Global TOP + Private Margin + Send to Intelligence -->
 <script>
 (() => {
   "use strict";
 
   const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
+  const LS_PRIVATE_MODE = "qm_private_mode_v1";    // "1" / "0"
+  const LS_MY_MARGIN_PCT = "qm_my_margin_pct_v1";  // np. "30"
+  const LS_INTEL_PREFILL = "qm_intel_prefill_v1";  // prefill dla Intelligence
 
   const $ = (sel) => document.querySelector(sel);
   const els = {
@@ -285,7 +288,25 @@
     exportCsv: () => $("#qmGlobalExportCsv"),
     exportJson: () => $("#qmGlobalExportJson"),
     clearDb: () => $("#qmGlobalClearDb"),
+    privateHeaders: () => document.querySelectorAll("[data-private-col]"),
   };
+
+  function isPrivateMode() {
+    return localStorage.getItem(LS_PRIVATE_MODE) === "1";
+  }
+
+  function getMyMarginPct() {
+    const raw = localStorage.getItem(LS_MY_MARGIN_PCT);
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 30;
+  }
+
+  function setMyMarginPct(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0 || n > 300) return false;
+    localStorage.setItem(LS_MY_MARGIN_PCT, String(n));
+    return true;
+  }
 
   function showToast(msg, type="info") {
     const box = els.toast();
@@ -340,7 +361,6 @@
     }
   }
 
-  // Konsolidacja: wybieramy najlepszy score (remis: niższa hurtowa)
   function consolidateAll() {
     const suppliers = loadSuppliers();
     const map = new Map();
@@ -371,18 +391,53 @@
         }
 
         const better =
-          (item.score > prev.score) ||
-          (item.score === prev.score && Number(item.wholesale) < Number(prev.wholesale));
+          (Number(item.score) > Number(prev.score)) ||
+          (Number(item.score) === Number(prev.score) && Number(item.wholesale) < Number(prev.wholesale));
 
         if (better) map.set(key, item);
       }
     }
 
     const unique = Array.from(map.values()).sort((a,b) =>
-      (b.score - a.score) || (b.marginPct - a.marginPct)
+      (Number(b.score) - Number(a.score)) || (Number(b.marginPct) - Number(a.marginPct))
     );
 
     return { suppliersCount: suppliers.length, total, unique };
+  }
+
+  function calcMySellPrice(wholesale, myMarginPct) {
+    const w = Number(wholesale);
+    const m = Number(myMarginPct);
+    if (!Number.isFinite(w) || w <= 0) return NaN;
+    if (!Number.isFinite(m)) return NaN;
+    return w * (1 + m/100);
+  }
+
+  function calcMyProfit(mySellPrice, wholesale) {
+    const s = Number(mySellPrice);
+    const w = Number(wholesale);
+    if (!Number.isFinite(s) || !Number.isFinite(w)) return NaN;
+    return s - w;
+  }
+
+  function sendToIntelligence(product) {
+    const payload = {
+      name: product?.name || "",
+      supplierName: product?.supplierName || "",
+      wholesale: Number(product?.wholesale),
+      retail: Number(product?.retail),
+      score: Number(product?.score),
+      marginPct: Number(product?.marginPct),
+      myMarginPct: getMyMarginPct(),
+      ts: new Date().toISOString(),
+    };
+    localStorage.setItem(LS_INTEL_PREFILL, JSON.stringify(payload));
+    window.location.href = "intelligence.html";
+  }
+
+  function updatePrivateHeadersVisibility() {
+    const on = isPrivateMode();
+    els.privateHeaders()?.forEach(th => th.style.display = on ? "" : "none");
   }
 
   function renderTable(list) {
@@ -390,9 +445,15 @@
     if (!tbody) return;
     tbody.innerHTML = "";
 
+    const privateMode = isPrivateMode();
+    const myMargin = getMyMarginPct();
+
     list.forEach((p, i) => {
       const tr = document.createElement("tr");
       if (i < 10) tr.style.background = "rgba(34,197,94,.08)";
+
+      const mySell = calcMySellPrice(p.wholesale, myMargin);
+      const myProfit = calcMyProfit(mySell, p.wholesale);
 
       tr.innerHTML = `
         <td>${escapeHtml(p.name)}</td>
@@ -401,19 +462,40 @@
         <td>${formatPLN(p.retail)}</td>
         <td>${Number.isFinite(Number(p.marginPct)) ? Number(p.marginPct).toFixed(2) + "%" : "–"}</td>
         <td><strong>${Number.isFinite(Number(p.score)) ? Number(p.score) : "–"}</strong></td>
+        ${privateMode ? `
+          <td><strong>${formatPLN(mySell)}</strong></td>
+          <td>${formatPLN(myProfit)}</td>
+        ` : `
+          <td style="display:none;"></td>
+          <td style="display:none;"></td>
+        `}
+        <td>
+          <button class="btn btn-sm btn-primary" type="button" data-intel>
+            Wyślij do Intelligence
+          </button>
+        </td>
       `;
+
+      tr.querySelector("[data-intel]")?.addEventListener("click", () => sendToIntelligence(p));
       tbody.appendChild(tr);
     });
+
+    updatePrivateHeadersVisibility();
   }
 
   function setStats({ suppliersCount, total, unique }) {
     const box = els.stats();
     if (!box) return;
+
+    const privateMode = isPrivateMode();
+    const myMargin = getMyMarginPct();
+
     box.innerHTML = `
       Hurtownie w bazie: <strong>${suppliersCount}</strong> •
       Produkty (łącznie): <strong>${total}</strong> •
       Produkty (unikalne): <strong>${unique.length}</strong>
       <span style="color:#94a3b8;">(TOP 10 podświetlone)</span>
+      ${privateMode ? `<span style="margin-left:10px;color:#94a3b8;">Tryb prywatny: <strong>ON</strong> • Twoja marża: <strong>${myMargin}%</strong></span>` : ``}
     `;
   }
 
@@ -448,7 +530,6 @@
     };
   }
 
-  // state
   let GLOBAL = [];
 
   function refresh() {
@@ -468,43 +549,117 @@
     renderTable(list.slice(0, 50));
   }
 
+  function togglePrivateMode() {
+    const next = isPrivateMode() ? "0" : "1";
+    localStorage.setItem(LS_PRIVATE_MODE, next);
+
+    if (next === "1") {
+      if (localStorage.getItem(LS_MY_MARGIN_PCT) == null) localStorage.setItem(LS_MY_MARGIN_PCT, "30");
+      showToast("Tryb prywatny: ON (Ctrl+Shift+P)", "success");
+    } else {
+      showToast("Tryb prywatny: OFF (Ctrl+Shift+P)", "success");
+    }
+    refresh();
+  }
+
+  function setMarginFlow() {
+    const current = getMyMarginPct();
+    const val = prompt("Ustaw Twoją marżę % (np. 30). Liczona od ceny hurtowej:", String(current));
+    if (val == null) return;
+    if (!setMyMarginPct(val)) return showToast("Błędna marża. Podaj liczbę 0–300.", "error");
+    showToast("Zapisano Twoją marżę.", "success");
+    refresh();
+  }
+
   function bind() {
     els.search()?.addEventListener("input", debounce(applySearch, 140));
 
     els.exportCsv()?.addEventListener("click", () => {
       if (!GLOBAL.length) return showToast("Brak danych do eksportu.", "error");
-      const csv = toCsv(
-        ["name","supplierName","wholesale","retail","marginPct","score"],
-        GLOBAL.map(x => [
+
+      const privateMode = isPrivateMode();
+      const myMargin = getMyMarginPct();
+
+      const headers = privateMode
+        ? ["name","supplierName","wholesale","retail","marginPct","score","mySellPrice","myProfit","myMarginPct"]
+        : ["name","supplierName","wholesale","retail","marginPct","score"];
+
+      const rows = GLOBAL.map(x => {
+        if (!privateMode) {
+          return [
+            x.name,
+            x.supplierName,
+            Number.isFinite(Number(x.wholesale)) ? Number(x.wholesale).toFixed(2) : "",
+            Number.isFinite(Number(x.retail)) ? Number(x.retail).toFixed(2) : "",
+            Number.isFinite(Number(x.marginPct)) ? Number(x.marginPct).toFixed(2) : "",
+            x.score
+          ];
+        }
+        const mySell = calcMySellPrice(x.wholesale, myMargin);
+        const myProfit = calcMyProfit(mySell, x.wholesale);
+        return [
           x.name,
           x.supplierName,
           Number.isFinite(Number(x.wholesale)) ? Number(x.wholesale).toFixed(2) : "",
           Number.isFinite(Number(x.retail)) ? Number(x.retail).toFixed(2) : "",
           Number.isFinite(Number(x.marginPct)) ? Number(x.marginPct).toFixed(2) : "",
-          x.score
-        ])
-      );
-      downloadBlob(csv, "text/csv;charset=utf-8", "qm-global-top.csv");
-      showToast("Wyeksportowano CSV (global).", "success");
+          x.score,
+          Number.isFinite(mySell) ? mySell.toFixed(2) : "",
+          Number.isFinite(myProfit) ? myProfit.toFixed(2) : "",
+          myMargin
+        ];
+      });
+
+      const csv = toCsv(headers, rows);
+      downloadBlob(csv, "text/csv;charset=utf-8", privateMode ? "qm-global-top-private.csv" : "qm-global-top.csv");
+      showToast("Wyeksportowano CSV.", "success");
     });
 
     els.exportJson()?.addEventListener("click", () => {
       if (!GLOBAL.length) return showToast("Brak danych do eksportu.", "error");
-      downloadBlob(JSON.stringify(GLOBAL, null, 2), "application/json", "qm-global-top.json");
-      showToast("Wyeksportowano JSON (global).", "success");
+
+      const privateMode = isPrivateMode();
+      const myMargin = getMyMarginPct();
+
+      const out = privateMode
+        ? GLOBAL.map(x => {
+            const mySell = calcMySellPrice(x.wholesale, myMargin);
+            const myProfit = calcMyProfit(mySell, x.wholesale);
+            return { ...x, myMarginPct: myMargin, mySellPrice: mySell, myProfit };
+          })
+        : GLOBAL;
+
+      downloadBlob(JSON.stringify(out, null, 2), "application/json", privateMode ? "qm-global-top-private.json" : "qm-global-top.json");
+      showToast("Wyeksportowano JSON.", "success");
     });
 
     els.clearDb()?.addEventListener("click", () => {
-      // czyścimy TYLKO bazę produktów per hurtownia
       localStorage.removeItem(LS_PRODUCTS_BY_SUPPLIER);
       GLOBAL = [];
       renderTable([]);
       setStats({ suppliersCount: 0, total: 0, unique: [] });
       showToast("Wyczyszczono bazę hurtowni (produkty per hurtownia).", "success");
     });
+
+    document.addEventListener("keydown", (e) => {
+      if (!e.ctrlKey || !e.shiftKey) return;
+      const k = String(e.key || "").toLowerCase();
+      if (k === "p") {
+        e.preventDefault();
+        togglePrivateMode();
+      }
+      if (k === "m") {
+        e.preventDefault();
+        setMarginFlow();
+      }
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    // domyślnie prywatny OFF + ukryj prywatne nagłówki
+    if (localStorage.getItem(LS_PRIVATE_MODE) == null) localStorage.setItem(LS_PRIVATE_MODE, "0");
+    updatePrivateHeadersVisibility();
+
     bind();
     refresh();
   });
