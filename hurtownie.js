@@ -17,7 +17,7 @@
   const LS_KEY = "qm_supplier_scores_v2";
   const LS_LAST_PRODUCTS = "qm_last_products_v1";
 
-  // ✅ NOWE: produkty per hurtownia (do globalnej bazy)
+  // ✅ produkty per hurtownia (do globalnej bazy)
   const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
 
   const MAX_SCORES = 100;
@@ -280,7 +280,7 @@
     return [entry, ...without].slice(0, MAX_SCORES);
   }
 
-  // ✅ NOWE: LocalStorage produkty per hurtownia
+  // ✅ LocalStorage produkty per hurtownia
   function loadProductsBySupplier() {
     try {
       const raw = localStorage.getItem(LS_PRODUCTS_BY_SUPPLIER);
@@ -298,12 +298,14 @@
     );
   }
 
+  // ✅ PROD fix: stabilna nazwa hurtowni w rekordzie
   function upsertSupplierProducts(list, supplierName, products) {
-    const key = normalizeSupplierName(supplierName);
+    const niceName = String(supplierName || "").trim().slice(0, 80) || "Hurtownia";
+    const key = normalizeSupplierName(niceName);
     const without = list.filter((x) => normalizeSupplierName(x?.supplierName) !== key);
     return [
       {
-        supplierName,
+        supplierName: niceName,
         ts: new Date().toISOString(),
         products: products.slice(0, MAX_PRODUCTS_PER_SUPPLIER),
       },
@@ -545,7 +547,7 @@
     // zapisz ostatnie produkty (search/export)
     saveLastProducts(products);
 
-    // ✅ NOWE: zapis produktów per hurtownia (globalna baza)
+    // ✅ zapis produktów per hurtownia (globalna baza)
     const allSuppliers = loadProductsBySupplier();
     const nextSuppliers = upsertSupplierProducts(allSuppliers, supplierName, products);
     saveProductsBySupplier(nextSuppliers);
