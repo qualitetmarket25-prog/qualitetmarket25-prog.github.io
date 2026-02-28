@@ -4,21 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard – QualitetMarket CRM</title>
-  <link rel="stylesheet" href="styles.css" />
 
-  <!-- planGuard fallback -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- ✅ zawsze używaj ./ na GitHub Pages -->
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- ✅ główny app (jeśli masz globalne helpery / nav / keys) -->
+  <script defer src="./app.js"></script>
+
+  <!-- ✅ planGuard: poprawna ścieżka (bez błędnego fallbacku do /planGuard.js) -->
+  <script defer src="./js/planGuard.js"></script>
 
   <style>
     .grid-3x { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
@@ -64,18 +58,18 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a href="listing.html">Listing</a>
-      <a class="active" href="dashboard.html" data-auth-only>Dashboard</a>
-      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="./index.html">Start</a>
+      <a href="./cennik.html">Plany</a>
+      <a href="./qualitetmarket.html">QualitetMarket</a>
+      <a href="./intelligence.html">Intelligence</a>
+      <a href="./listing.html">Listing</a>
+      <a class="active" href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -92,9 +86,9 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="qualitetmarket.html">Global TOP</a>
-      <a class="btn" href="intelligence.html">Intelligence</a>
-      <a class="btn" href="listing.html">Listing</a>
+      <a class="btn btn-secondary" href="./qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="./intelligence.html">Intelligence</a>
+      <a class="btn" href="./listing.html">Listing</a>
       <button class="btn btn-primary" id="btnNew" type="button">+ Dodaj pozycję</button>
       <button class="btn btn-danger" id="btnWipe" type="button">Wyczyść CRM</button>
     </div>
@@ -163,7 +157,7 @@
             <option value="inne">Inne</option>
           </select>
 
-          <!-- ✅ NOWE: follow-up dziś -->
+          <!-- ✅ follow-up dziś -->
           <label class="toggle">
             <input type="checkbox" id="onlyDue" />
             Tylko follow-up dziś
@@ -293,7 +287,7 @@
 <script>
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "login.html";
+    window.location.href = "./login.html";
   }
 
   (function () {
@@ -868,7 +862,7 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
         return;
       }
 
-      // ✅ FOLLOW-UP actions
+      // FOLLOW-UP actions
       if (act === "fuCopy"){
         const nextItem = ensureFollowUp(item);
         const text = buildFollowUpText(nextItem);
