@@ -105,6 +105,49 @@
     </div>
   </div>
 
+  <!-- ✅ NOWE: GLOBAL TOP z Hurtowni -->
+  <div class="section">
+    <div class="section-title reveal">
+      <h2>TOP produkty globalnie (ze wszystkich hurtowni)</h2>
+      <p>
+        To jest “co brać” z Twoich importów CSV. Jeśli tu jest pusto — wejdź w Hurtownie i wgraj CSV.
+      </p>
+    </div>
+
+    <div id="qmGlobalToast" class="note" style="display:none;margin-bottom:12px;"></div>
+
+    <div class="card reveal d2">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+        <input class="input" id="qmGlobalSearch" type="text" placeholder="Szukaj w globalnych produktach…" style="max-width:420px;">
+        <button class="btn btn-sm" type="button" id="qmGlobalExportCsv">Eksport CSV</button>
+        <button class="btn btn-sm btn-secondary" type="button" id="qmGlobalExportJson">Eksport JSON</button>
+        <button class="btn btn-sm btn-danger" type="button" id="qmGlobalClearDb">Wyczyść bazę hurtowni</button>
+      </div>
+
+      <div id="qmGlobalStats" class="muted" style="margin-bottom:10px;"></div>
+
+      <div class="table-wrap">
+        <table class="table" id="qmGlobalTable">
+          <thead>
+            <tr>
+              <th>Produkt</th>
+              <th>Hurtownia</th>
+              <th>Cena hurtowa</th>
+              <th>Cena rynkowa</th>
+              <th>Marża %</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="note" style="margin-top:10px;">
+        Wybór per produkt: najlepszy <strong>score</strong>, a przy remisie niższa <strong>cena hurtowa</strong>.
+      </div>
+    </div>
+  </div>
+
   <div class="section">
     <div class="section-title reveal">
       <h2>Dostęp do panelu Webkul (SP Seller)</h2>
@@ -224,6 +267,248 @@
       if (e.key === "Escape") close();
     });
   })();
+</script>
+
+<!-- ✅ NOWE: Global TOP logic (bez nowych plików) -->
+<script>
+(() => {
+  "use strict";
+
+  const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
+
+  const $ = (sel) => document.querySelector(sel);
+  const els = {
+    toast: () => $("#qmGlobalToast"),
+    stats: () => $("#qmGlobalStats"),
+    search: () => $("#qmGlobalSearch"),
+    tbody: () => document.querySelector("#qmGlobalTable tbody"),
+    exportCsv: () => $("#qmGlobalExportCsv"),
+    exportJson: () => $("#qmGlobalExportJson"),
+    clearDb: () => $("#qmGlobalClearDb"),
+  };
+
+  function showToast(msg, type="info") {
+    const box = els.toast();
+    if (!box) return;
+    box.style.display = "";
+    box.textContent = msg;
+
+    box.style.border = "1px solid rgba(148,163,184,.25)";
+    box.style.background = "rgba(148,163,184,.08)";
+    if (type === "error") {
+      box.style.border = "1px solid rgba(239,68,68,.35)";
+      box.style.background = "rgba(239,68,68,.10)";
+    } else if (type === "success") {
+      box.style.border = "1px solid rgba(34,197,94,.30)";
+      box.style.background = "rgba(34,197,94,.10)";
+    }
+
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => box.style.display = "none", 2400);
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function normName(s) {
+    return String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/[^\p{L}\p{N} ]/gu, "");
+  }
+
+  function formatPLN(n) {
+    const x = Number(n);
+    if (!Number.isFinite(x)) return "–";
+    return x.toFixed(2) + " zł";
+  }
+
+  function loadSuppliers() {
+    try {
+      const raw = localStorage.getItem(LS_PRODUCTS_BY_SUPPLIER);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // Konsolidacja: wybieramy najlepszy score (remis: niższa hurtowa)
+  function consolidateAll() {
+    const suppliers = loadSuppliers();
+    const map = new Map();
+    let total = 0;
+
+    for (const s of suppliers) {
+      const supplierName = s?.supplierName || "Hurtownia";
+      const products = Array.isArray(s?.products) ? s.products : [];
+      total += products.length;
+
+      for (const p of products) {
+        const key = normName(p?.name);
+        if (!key) continue;
+
+        const item = {
+          name: p.name,
+          supplierName,
+          wholesale: p.wholesale,
+          retail: p.retail,
+          marginPct: p.marginPct,
+          score: p.score
+        };
+
+        const prev = map.get(key);
+        if (!prev) {
+          map.set(key, item);
+          continue;
+        }
+
+        const better =
+          (item.score > prev.score) ||
+          (item.score === prev.score && Number(item.wholesale) < Number(prev.wholesale));
+
+        if (better) map.set(key, item);
+      }
+    }
+
+    const unique = Array.from(map.values()).sort((a,b) =>
+      (b.score - a.score) || (b.marginPct - a.marginPct)
+    );
+
+    return { suppliersCount: suppliers.length, total, unique };
+  }
+
+  function renderTable(list) {
+    const tbody = els.tbody();
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    list.forEach((p, i) => {
+      const tr = document.createElement("tr");
+      if (i < 10) tr.style.background = "rgba(34,197,94,.08)";
+
+      tr.innerHTML = `
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.supplierName)}</td>
+        <td>${formatPLN(p.wholesale)}</td>
+        <td>${formatPLN(p.retail)}</td>
+        <td>${Number.isFinite(Number(p.marginPct)) ? Number(p.marginPct).toFixed(2) + "%" : "–"}</td>
+        <td><strong>${Number.isFinite(Number(p.score)) ? Number(p.score) : "–"}</strong></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function setStats({ suppliersCount, total, unique }) {
+    const box = els.stats();
+    if (!box) return;
+    box.innerHTML = `
+      Hurtownie w bazie: <strong>${suppliersCount}</strong> •
+      Produkty (łącznie): <strong>${total}</strong> •
+      Produkty (unikalne): <strong>${unique.length}</strong>
+      <span style="color:#94a3b8;">(TOP 10 podświetlone)</span>
+    `;
+  }
+
+  function toCsv(headers, rows) {
+    const esc = (v) => {
+      const s = String(v ?? "");
+      if (/[",\n\r;]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+      return s;
+    };
+    const sep = ";";
+    return [
+      headers.map(esc).join(sep),
+      ...rows.map((r) => r.map(esc).join(sep))
+    ].join("\n");
+  }
+
+  function downloadBlob(content, mime, filename) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 800);
+  }
+
+  function debounce(fn, wait=160) {
+    let t = null;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }
+
+  // state
+  let GLOBAL = [];
+
+  function refresh() {
+    const data = consolidateAll();
+    GLOBAL = data.unique;
+    setStats(data);
+    renderTable(GLOBAL.slice(0, 50));
+
+    if (!data.suppliersCount) {
+      showToast("Brak danych z Hurtowni. Wejdź w Hurtownie i wgraj CSV.", "error");
+    }
+  }
+
+  function applySearch() {
+    const q = String(els.search()?.value ?? "").trim().toLowerCase();
+    const list = q ? GLOBAL.filter(x => String(x.name).toLowerCase().includes(q)) : GLOBAL;
+    renderTable(list.slice(0, 50));
+  }
+
+  function bind() {
+    els.search()?.addEventListener("input", debounce(applySearch, 140));
+
+    els.exportCsv()?.addEventListener("click", () => {
+      if (!GLOBAL.length) return showToast("Brak danych do eksportu.", "error");
+      const csv = toCsv(
+        ["name","supplierName","wholesale","retail","marginPct","score"],
+        GLOBAL.map(x => [
+          x.name,
+          x.supplierName,
+          Number.isFinite(Number(x.wholesale)) ? Number(x.wholesale).toFixed(2) : "",
+          Number.isFinite(Number(x.retail)) ? Number(x.retail).toFixed(2) : "",
+          Number.isFinite(Number(x.marginPct)) ? Number(x.marginPct).toFixed(2) : "",
+          x.score
+        ])
+      );
+      downloadBlob(csv, "text/csv;charset=utf-8", "qm-global-top.csv");
+      showToast("Wyeksportowano CSV (global).", "success");
+    });
+
+    els.exportJson()?.addEventListener("click", () => {
+      if (!GLOBAL.length) return showToast("Brak danych do eksportu.", "error");
+      downloadBlob(JSON.stringify(GLOBAL, null, 2), "application/json", "qm-global-top.json");
+      showToast("Wyeksportowano JSON (global).", "success");
+    });
+
+    els.clearDb()?.addEventListener("click", () => {
+      // czyścimy TYLKO bazę produktów per hurtownia
+      localStorage.removeItem(LS_PRODUCTS_BY_SUPPLIER);
+      GLOBAL = [];
+      renderTable([]);
+      setStats({ suppliersCount: 0, total: 0, unique: [] });
+      showToast("Wyczyszczono bazę hurtowni (produkty per hurtownia).", "success");
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    bind();
+    refresh();
+  });
+})();
 </script>
 
 </body>
