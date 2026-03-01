@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Koszyk</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <main class="wrap">
+    <a class="back" href="./product.html">← Wróć do produktu</a>
+
+    <h1>Koszyk</h1>
+
+    <div id="cartBox" class="card"></div>
+
+    <div class="actions">
+      <button id="clearBtn" class="btn secondary">Wyczyść koszyk</button>
+      <button id="checkoutBtn" class="btn">Przejdź do płatności</button>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const box = document.getElementById("cartBox");
+      const clearBtn = document.getElementById("clearBtn");
+      const checkoutBtn = document.getElementById("checkoutBtn");
+
+      const raw = localStorage.getItem("cart");
+      const item = raw ? JSON.parse(raw) : null;
+
+      function render() {
+        if (!item) {
+          box.innerHTML = "<p>Koszyk jest pusty.</p>";
+          checkoutBtn.disabled = true;
+          return;
+        }
+        box.innerHTML = `
+          <div class="row">
+            <div>
+              <div class="name">${item.name || "Produkt"}</div>
+              <div class="price">${Number(item.price || 0).toFixed(2)} €</div>
+            </div>
+            <div class="qty">x1</div>
+          </div>
+        `;
+        checkoutBtn.disabled = false;
+      }
+
+      clearBtn.addEventListener("click", () => {
+        localStorage.removeItem("cart");
+        location.reload();
+      });
+
+      checkoutBtn.addEventListener("click", () => {
+        alert("Checkout (demo) — tu podepniemy płatności / formularz zamówienia.");
+      });
+
+      render();
+    })();
+  </script>
+
+</body>
+</html>
