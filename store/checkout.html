@@ -38,7 +38,7 @@
     <div class="grid">
       <div class="card">
         <h1 class="h">Dane do zamówienia</h1>
-        <div class="muted">Wersja “Stripe-ready” (na razie symulacja PaymentIntent).</div>
+        <div class="muted">Wersja “Stripe-ready”.</div>
 
         <form id="checkoutForm">
           <label>Imię i nazwisko</label>
@@ -81,7 +81,7 @@
 
           <div id="msg" style="margin-top:10px;font-weight:800;"></div>
           <div class="muted" style="margin-top:6px;font-size:13px;">
-            Następny krok: podepniemy prawdziwe Stripe Checkout / PaymentIntent przez backend (Cloudflare Worker / Netlify).
+            Po kliknięciu tworzę sesję Stripe przez Cloudflare Worker i przekierowuję na płatność.
           </div>
         </form>
       </div>
@@ -104,6 +104,9 @@
   </div>
 
   <script>
+    // === Worker endpoint (Twój Cloudflare Worker) ===
+    const WORKER_URL = "https://noisy-paper-01f8.qualitetmarket25.workers.dev";
+
     // ---- config (na start stałe; potem liczenie per kraj / stawki)
     const VAT_RATE = 0.23;          // 23% PL (demo)
     const SHIPPING_EUR = 0.00;      // Free EU Shipping (zgodnie z product)
@@ -158,11 +161,12 @@
       totalEl.textContent = money(total);
     }
 
-    // ---- Stripe-ready: docelowo call do backendu po Checkout Session.
-    // Na razie: zapis order_v1 + symulacja success.
-    document.getElementById("checkoutForm").addEventListener("submit", (e) => {
+    // ---- REAL Stripe flow: call Worker -> get Checkout URL -> redirect
+    document.getElementById("checkoutForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!item) return;
+
+      payBtn.disabled = true;
 
       const price = Number(item.price || 0);
       const vat = price * VAT_RATE;
@@ -196,18 +200,29 @@
 
       badge.textContent = "Status: inicjalizacja płatności…";
       badge.className = "badge";
-
-      msg.textContent = "Tworzę sesję płatności (demo)…";
+      msg.textContent = "Tworzę sesję Stripe…";
       msg.className = "";
 
-      setTimeout(() => {
-        nextOrder.status = "paid_demo";
-        localStorage.setItem(LS_ORDER, JSON.stringify(nextOrder));
-        msg.textContent = "✅ Płatność zakończona (DEMO). Następny krok: realny Stripe.";
-        msg.className = "ok";
-        badge.textContent = "Status: opłacone (demo)";
-        badge.className = "badge ok";
-      }, 1200);
+      try {
+        const r = await fetch(WORKER_URL + "/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nextOrder)
+        });
+
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data?.url) throw new Error(data?.error || "Brak URL ze Stripe");
+
+        // przekierowanie na Stripe Checkout
+        window.location.href = data.url;
+
+      } catch (err) {
+        payBtn.disabled = false;
+        msg.textContent = "❌ Błąd: " + (err?.message || "nieznany");
+        msg.className = "err";
+        badge.textContent = "Status: błąd";
+        badge.className = "badge err";
+      }
     });
   </script>
 </body>
