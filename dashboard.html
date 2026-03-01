@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard – QualitetMarket CRM</title>
 
-  <!-- ✅ zawsze używaj ./ na GitHub Pages -->
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css" />
 
-  <!-- ✅ główny app (jeśli masz globalne helpery / nav / keys) -->
-  <script defer src="./app.js"></script>
-
-  <!-- ✅ planGuard: poprawna ścieżka (bez błędnego fallbacku do /planGuard.js) -->
-  <script defer src="./js/planGuard.js"></script>
+  <!-- Guard pierwszy -->
+  <script defer src="/js/planGuard.js"></script>
+  <script defer src="/app.js"></script>
 
   <style>
     .grid-3x { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
@@ -30,7 +29,6 @@
     .kpi strong{ font-size: 18px; }
     .table td { vertical-align: top; }
 
-    /* follow-up badge */
     .fu { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; border:1px solid rgba(148,163,184,.25); background: rgba(148,163,184,.08); color:#cbd5e1; font-size:12px; }
     .fu .dot { width:8px;height:8px;border-radius:999px; display:inline-block; background: rgba(148,163,184,.8); }
     .fu.due { border-color: rgba(250,204,21,.45); background: rgba(250,204,21,.10); }
@@ -58,18 +56,18 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="./index.html">Start</a>
-      <a href="./cennik.html">Plany</a>
-      <a href="./qualitetmarket.html">QualitetMarket</a>
-      <a href="./intelligence.html">Intelligence</a>
-      <a href="./listing.html">Listing</a>
-      <a class="active" href="./dashboard.html" data-auth-only>Dashboard</a>
-      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="/index.html">Start</a>
+      <a href="/cennik.html">Plany</a>
+      <a href="/qualitetmarket.html">QualitetMarket</a>
+      <a href="/intelligence.html">Intelligence</a>
+      <a href="/listing.html">Listing</a>
+      <a class="active" href="/dashboard.html" data-auth-only>Dashboard</a>
+      <a href="/hurtownie.html" id="hurtownieLink">Hurtownie</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="/login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="/aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -86,9 +84,9 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="./qualitetmarket.html">Global TOP</a>
-      <a class="btn" href="./intelligence.html">Intelligence</a>
-      <a class="btn" href="./listing.html">Listing</a>
+      <a class="btn btn-secondary" href="/qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="/intelligence.html">Intelligence</a>
+      <a class="btn" href="/listing.html">Listing</a>
       <button class="btn btn-primary" id="btnNew" type="button">+ Dodaj pozycję</button>
       <button class="btn btn-danger" id="btnWipe" type="button">Wyczyść CRM</button>
     </div>
@@ -157,7 +155,6 @@
             <option value="inne">Inne</option>
           </select>
 
-          <!-- ✅ follow-up dziś -->
           <label class="toggle">
             <input type="checkbox" id="onlyDue" />
             Tylko follow-up dziś
@@ -194,7 +191,6 @@
   </div>
 </div>
 
-<!-- Modal -->
 <div id="modal" style="display:none; position:fixed; inset:0; background: rgba(0,0,0,.55); padding: 18px; overflow:auto; z-index: 9999;">
   <div class="card" style="max-width: 980px; margin: 0 auto;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
@@ -285,9 +281,23 @@
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script>
+  // ===== Plan badge (spójne klucze) =====
+  function normalizePlan(p){
+    p = String(p || "").toLowerCase().trim();
+    return (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+  }
+  function renderPlanBadge(){
+    const el = document.getElementById("planBadge");
+    if (!el) return;
+    const plan = normalizePlan(localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "basic");
+    el.textContent = plan.toUpperCase();
+    el.setAttribute("data-plan", plan);
+  }
+  renderPlanBadge();
+
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "./login.html";
+    window.location.href = "/login.html";
   }
 
   (function () {
@@ -389,28 +399,22 @@
     $("#kProfit").textContent = money(profit);
   }
 
-  // ===== Follow-up engine =====
   function ensureFollowUp(item){
-    // tylko dla "listed"
     if (item.status !== "listed") return item;
 
     const now = Date.now();
     const stage = Number.isFinite(Number(item.fuStage)) ? Number(item.fuStage) : 0;
-
-    // anchor: kiedy zaczęliśmy "listed"
     const anchor = Number.isFinite(Number(item.listedAt)) ? Number(item.listedAt) : (Number.isFinite(Number(item.ts)) ? Number(item.ts) : now);
 
-    // jeśli nie ma listedAt, ustaw
     if (!Number.isFinite(Number(item.listedAt))) item.listedAt = anchor;
 
-    // jeśli nie ma terminu follow-up, ustaw wg stage
     if (!Number.isFinite(Number(item.fuNextTs))) {
       item.fuStage = stage;
       item.fuNextTs =
         stage === 0 ? (anchor + FU_24H) :
         stage === 1 ? (anchor + FU_48H) :
         stage === 2 ? (anchor + FU_72H) :
-        0; // stage 3 = koniec
+        0;
       item.fuUpdatedAt = now;
     }
 
@@ -485,7 +489,6 @@ Akcje:
     const p = n(item.price);
     if (!p) return item;
     const next = Math.max(1, p * (1 - pct));
-    // psychologiczna końcówka .99 / .90
     const floor = Math.floor(next);
     const frac = next - floor;
     const psych = floor + (frac < 0.5 ? 0.99 : 0.90);
@@ -494,7 +497,6 @@ Akcje:
   }
 
   function completeFollowUpStep(item, action){
-    // action: "refresh" | "drop5" | "retitle"
     const now = Date.now();
     item = ensureFollowUp(item);
 
@@ -507,7 +509,6 @@ Akcje:
       return item;
     }
     if (action === "drop5" && stage <= 1) {
-      // obniżka i przejście do etapu 72h
       item = applyPriceDrop(item, 0.05);
       item.fuStage = 2;
       item.fuNextTs = item.listedAt + FU_72H;
@@ -540,7 +541,6 @@ Akcje:
     if (f.channel) out = out.filter(x => x.channel === f.channel);
     if (f.q) out = out.filter(x => String(x.name||"").toLowerCase().includes(f.q));
 
-    // ensure FU data
     out = out.map(x => {
       const y = { ...x };
       ensureFollowUp(y);
@@ -557,7 +557,6 @@ Akcje:
       });
     }
 
-    // sort: najpierw DUE follow-up, potem status, potem newest
     const pr = { todo: 1, listed: 0, sold: 2, drop: 3 };
     out.sort((a,b)=>{
       const aDue = (a.status==="listed" && n(a.fuNextTs) && n(a.fuStage) < 3 && Date.now() >= n(a.fuNextTs)) ? 0 : 1;
@@ -573,7 +572,6 @@ Akcje:
     const list0 = loadCRM();
     updateKpis(list0);
 
-    // zapis FU danych jeśli brak (żeby nie było "puste")
     const list = list0.map(x => {
       const y = { ...x };
       ensureFollowUp(y);
@@ -655,7 +653,6 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
     });
   }
 
-  // ===== Modal =====
   let editingId = null;
 
   function openModal(item=null){
@@ -687,7 +684,6 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
         const prev = list[idx];
         const next = { ...prev, ...payload, id: editingId, ts: Date.now() };
 
-        // jeśli zmiana statusu na listed i brak listedAt -> ustaw
         if (prev.status !== "listed" && next.status === "listed") {
           next.listedAt = Date.now();
           next.fuStage = 0;
@@ -754,7 +750,6 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
       toast("Wyeksportowano JSON.", "success");
     });
 
-    // modal
     $("#mClose").addEventListener("click", closeModal);
     $("#mSave").addEventListener("click", ()=> {
       const name = String($("#mName").value || "").trim();
@@ -807,7 +802,6 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
       mToast("Zaciągnięto z Listing (status: listed).", "success");
     });
 
-    // tabela akcje
     $("#tbody").addEventListener("click", (e)=>{
       const btn = e.target.closest("button[data-act]");
       if (!btn) return;
@@ -862,7 +856,6 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
         return;
       }
 
-      // FOLLOW-UP actions
       if (act === "fuCopy"){
         const nextItem = ensureFollowUp(item);
         const text = buildFollowUpText(nextItem);
@@ -899,7 +892,6 @@ ${item.status==="sold" ? ("Sold: " + money(item.soldPrice) + "\nProfit: " + mone
       }
     });
 
-    // mobilne menu
     (function () {
       const root = document.querySelector("[data-nav-root]");
       const btn = document.querySelector("[data-nav-toggle]");
