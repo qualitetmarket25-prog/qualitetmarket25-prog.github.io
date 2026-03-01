@@ -81,6 +81,14 @@
   function isLogged() { return localStorage.getItem("is_logged_in") === "true"; }
 
   // ===============================
+  // SERVICE WORKER (global)
+  // ===============================
+  function registerSW() {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  }
+
+  // ===============================
   // ICONS (INLINE SVG) — always works
   // ===============================
   const ICON = {
@@ -296,6 +304,9 @@
   // BOOT
   // ===============================
   function boot() {
+    // SW zawsze (żeby wszystkie podstrony były pod kontrolą PWA)
+    registerSW();
+
     // === FIX: noShell MUSI BYĆ TU, na samej górze boot() ===
     if (document.body?.dataset?.noShell === "1") {
       window.QM = { getPlan, setPlan, hasAtLeast, isElite, isLogged };
