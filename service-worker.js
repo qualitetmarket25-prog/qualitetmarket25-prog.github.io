@@ -1,18 +1,17 @@
-const VERSION = "qm-sw-v4";
+const VERSION = "qm-sw-v5";
 const STATIC_CACHE = `qm-static-${VERSION}`;
 const RUNTIME_CACHE = `qm-runtime-${VERSION}`;
 
 // Tylko realnie istniejące i stałe pliki.
-// NIE dodawaj tu stron typu /intelligence.html itd. (bo często zmieniasz i SW potem miesza).
+// UWAGA: wszystko relatywnie "./" — zero absolutów.
 const PRECACHE_URLS = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/js/planGuard.js",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./app.js",
+  "./manifest.webmanifest",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -47,20 +46,28 @@ const isHTML = (req) =>
   (req.headers.get("accept") || "").includes("text/html");
 
 const isAssetPath = (pathname) =>
-  /\.(js|css|png|jpg|jpeg|webp|svg|ico|json)$/i.test(pathname);
+  /\.(js|css|png|jpg|jpeg|webp|svg|ico|json|webmanifest|woff2?|ttf|eot)$/i.test(pathname);
 
-// Helper: normalizuj "/" -> "/index.html" w cache match
+// Helper: normalizuj "./" -> "./index.html" w cache match
 async function matchStatic(urlOrReq) {
   const req = (urlOrReq instanceof Request) ? urlOrReq : new Request(urlOrReq);
   let cached = await caches.match(req);
   if (cached) return cached;
 
-  // "/": czasem przeglądarka pyta o "/" – a my mamy też "/index.html"
   const u = new URL(req.url);
-  if (u.origin === self.location.origin && u.pathname === "/") {
-    cached = await caches.match("/index.html");
+
+  // Jeśli pytają o "/" albo o root ścieżki (GH Pages potrafi), próbuj index.html
+  if (u.origin === self.location.origin && (u.pathname === "/" || u.pathname.endsWith("/"))) {
+    cached = await caches.match("./index.html");
     if (cached) return cached;
   }
+
+  // Jeśli pytają o "/index.html" a my trzymamy "./index.html"
+  if (u.origin === self.location.origin && u.pathname === "/index.html") {
+    cached = await caches.match("./index.html");
+    if (cached) return cached;
+  }
+
   return null;
 }
 
@@ -71,16 +78,14 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // 1) NAV / HTML — network-first, ale nie zapisujemy HTML do runtime cache
-  if (isHTML(req)) {
+  // 1) NAV / HTML — network-first, bez zapisu HTML do runtime cache
+  if (isHTML(req) || url.pathname.endsWith(".html") || url.pathname === "/") {
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(req, { cache: "no-store" });
         if (fresh && fresh.ok) return fresh;
-        // jeśli serwer zwrócił nie-ok, spróbuj cache
         return (await matchStatic(req)) || Response.error();
       } catch (_) {
-        // offline: index jako fallback
         return (await matchStatic(req)) || Response.error();
       }
     })());
@@ -124,5 +129,5 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3) Reszta: passthrough (bez cache) – minimalizuje “dziwne” przypadki
+  // 3) Reszta: passthrough (bez cache)
 });
