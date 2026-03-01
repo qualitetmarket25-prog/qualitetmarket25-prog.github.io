@@ -1,0 +1,123 @@
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background: #ffffff;
+  color: #111;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 60px;
+  border-bottom: 1px solid #eee;
+}
+
+.logo {
+  font-weight: 600;
+  letter-spacing: 3px;
+  font-size: 18px;
+}
+
+.cart-link {
+  text-decoration: none;
+  color: #111;
+  font-size: 14px;
+}
+
+.hero {
+  display: flex;
+  padding: 80px 10%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero-content {
+  max-width: 500px;
+}
+
+.hero h1 {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.price {
+  margin: 20px 0;
+}
+
+.old {
+  text-decoration: line-through;
+  color: #aaa;
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+.new {
+  font-size: 32px;
+  color: #c6a75e;
+  font-weight: 600;
+}
+
+.buy-btn {
+  background: #c6a75e;
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 15px;
+  letter-spacing: 1px;
+}
+
+.buy-btn:hover {
+  opacity: 0.9;
+}
+
+.shipping {
+  font-size: 13px;
+  color: #888;
+  margin-top: 10px;
+}
+
+.hero-image img {
+  max-width: 420px;
+  border-radius: 12px;
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  padding: 80px 10%;
+  gap: 40px;
+  background: #f8f8f8;
+}
+
+.benefit h3 {
+  color: #c6a75e;
+  margin-bottom: 8px;
+}
+
+.benefit p {
+  color: #555;
+}
+
+.guarantee {
+  text-align: center;
+  padding: 80px 10%;
+}
+
+.guarantee h2 {
+  font-size: 28px;
+  margin-bottom: 15px;
+}
+
+footer {
+  text-align: center;
+  padding: 30px;
+  font-size: 13px;
+  color: #aaa;
+}
