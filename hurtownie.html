@@ -5,43 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hurtownie – Zarabianie u Szefa</title>
 
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="icons/icon-192.png" />
+  <!-- RELATIVE PATHS ONLY -->
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="./icons/icon-192.png" />
 
   <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#0b0f14" />
 
-  <!-- planGuard fallback: /js/ oraz root -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- Core -->
+  <script defer src="./js/planGuard.js"></script>
+  <script defer src="./app.js"></script>
 
-  <!-- app.js fallback: assets/ oraz root -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("assets/app.js", () => tryLoad("app.js"));
-    })();
-  </script>
+  <!-- Page logic -->
+  <script defer src="./hurtownie.js"></script>
 
-  <!-- hurtownie.js (root) -->
-  <script src="hurtownie.js" defer></script>
+  <!-- SW registration -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js");
+      });
+    }
+  </script>
 </head>
 
 <body data-require="pro">
@@ -59,18 +45,18 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html" data-elite-link>Intelligence</a>
-      <a href="blueprints.html" data-elite-link>Blueprints</a>
-      <a class="active" href="hurtownie.html">Hurtownie</a>
-      <a href="dashboard.html" data-auth-only>Dashboard</a>
+      <a href="./index.html">Start</a>
+      <a href="./cennik.html">Plany</a>
+      <a href="./qualitetmarket.html">QualitetMarket</a>
+      <a href="./intelligence.html" data-elite-link>Intelligence</a>
+      <a href="./blueprints.html" data-elite-link>Blueprints</a>
+      <a class="active" href="./hurtownie.html">Hurtownie</a>
+      <a href="./dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -87,10 +73,10 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="intelligence.html" data-elite-btn>Sprawdź Intelligence</a>
-      <a class="btn" href="blueprints.html" data-elite-btn>Blueprints</a>
-      <a class="btn" href="dashboard.html" data-auth-only>Dashboard</a>
-      <a class="btn" href="cennik.html">Upgrade planu</a>
+      <a class="btn btn-secondary" href="./intelligence.html" data-elite-btn>Sprawdź Intelligence</a>
+      <a class="btn" href="./blueprints.html" data-elite-btn>Blueprints</a>
+      <a class="btn" href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a class="btn" href="./cennik.html">Upgrade planu</a>
     </div>
   </div>
 
@@ -173,7 +159,7 @@
 <script>
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "login.html";
+    window.location.href = "./login.html";
   }
 
   // CTA w nav: guest vs logged
@@ -190,7 +176,7 @@
     }
   })();
 
-  // mobilne menu (hamburger)
+  // mobilne menu (hamburger) — legacy (CSS i tak chowa, ale zostawiamy kompatybilnie)
   (function () {
     const root = document.querySelector("[data-nav-root]");
     const btn = document.querySelector("[data-nav-toggle]");
