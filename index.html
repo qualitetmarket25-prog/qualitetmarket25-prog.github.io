@@ -3,14 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#111111" />
+  <meta name="theme-color" content="#0b0f14" />
   <title>QualitetMarket</title>
 
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="icon" href="/icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/favicon.ico" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
+  <link rel="stylesheet" href="./styles.css" />
 </head>
+
 <body>
   <header>
     <strong>QualitetMarket</strong>
@@ -19,23 +21,24 @@
 
   <main class="container">
     <h1>Demo SaaS</h1>
+
     <nav class="nav">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/hurtownie.html">Hurtownie</a>
-      <a href="/qualitetmarket.html">QualitetMarket</a>
-      <a href="/intelligence.html">Intelligence</a>
-      <a href="/cennik.html">Cennik</a>
-      <a href="/aktywuj-pro.html">Aktywuj</a>
+      <a href="./dashboard.html">Dashboard</a>
+      <a href="./hurtownie.html">Hurtownie</a>
+      <a href="./qualitetmarket.html">QualitetMarket</a>
+      <a href="./intelligence.html">Intelligence</a>
+      <a href="./cennik.html">Cennik</a>
+      <a href="./aktywuj-pro.html">Aktywuj</a>
     </nav>
   </main>
 
-  <script defer src="/js/planGuard.js"></script>
-  <script defer src="/app.js"></script>
+  <script defer src="./js/planGuard.js"></script>
+  <script defer src="./app.js"></script>
 
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/service-worker.js").catch(()=>{});
+        navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
       });
     }
   </script>
