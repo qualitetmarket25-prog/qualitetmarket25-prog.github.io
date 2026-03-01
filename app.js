@@ -1,4 +1,11 @@
-(() => {
+if (document.body?.dataset?.noShell === "1") {
+  handlePlanFromQuery();
+  applyGuards();
+  renderPlanBadge();
+  renderAuthUI();
+  bindLogout();
+  return;
+}(() => {
   "use strict";
 
   // ===============================
