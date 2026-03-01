@@ -21,7 +21,7 @@
   const LS_PRODUCTS_BY_SUPPLIER = "qm_products_by_supplier_v1";
 
   const MAX_SCORES = 100;
-  const MAX_SUPPLIERS_STORE = 50;      // ile hurtowni trzymamy
+  const MAX_SUPPLIERS_STORE = 50; // ile hurtowni trzymamy
   const MAX_PRODUCTS_PER_SUPPLIER = 5000;
 
   // ===== DOM helpers =====
@@ -298,7 +298,7 @@
     );
   }
 
-  // ✅ PROD fix: stabilna nazwa hurtowni w rekordzie
+  // ✅ stabilna nazwa hurtowni w rekordzie
   function upsertSupplierProducts(list, supplierName, products) {
     const niceName = String(supplierName || "").trim().slice(0, 80) || "Hurtownia";
     const key = normalizeSupplierName(niceName);
@@ -408,7 +408,12 @@
 
     $("#qmClearRanking")?.addEventListener("click", () => {
       localStorage.removeItem(LS_KEY);
-      renderSupplierRanking([], { supplierName: "–", avgScore: 0, products: 0, ts: new Date().toISOString() });
+      renderSupplierRanking([], {
+        supplierName: "–",
+        avgScore: 0,
+        products: 0,
+        ts: new Date().toISOString()
+      });
       showToast("Ranking wyczyszczony.", "success");
     });
 
@@ -578,6 +583,8 @@
     const sum = els.summary();
     if (sum) sum.innerHTML = "";
     localStorage.removeItem(LS_LAST_PRODUCTS);
+    const s = els.search();
+    if (s) s.value = "";
     showToast("Wyniki wyczyszczone.", "success");
   }
 
@@ -633,4 +640,5 @@
 
   // compatibility (jeśli gdzieś jest onclick w starym HTML)
   window.processCSV = processCSV;
+
 })();
