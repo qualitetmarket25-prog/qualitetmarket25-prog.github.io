@@ -4,7 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Listing Generator – QualitetMarket</title>
-  <link rel="stylesheet" href="styles.css" />
+
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css" />
+
   <style>
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     textarea.input { min-height: 140px; resize: vertical; }
@@ -13,19 +18,9 @@
     .kpi small{ display:block; color:#94a3b8; font-weight:500; }
   </style>
 
-  <!-- planGuard fallback -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- Guard pierwszy -->
+  <script defer src="/js/planGuard.js"></script>
+  <script defer src="/app.js"></script>
 </head>
 
 <body data-require="pro">
@@ -43,18 +38,18 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a class="active" href="listing.html">Listing</a>
-      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="dashboard.html" data-auth-only>Dashboard</a>
+      <a href="/index.html">Start</a>
+      <a href="/cennik.html">Plany</a>
+      <a href="/qualitetmarket.html">QualitetMarket</a>
+      <a href="/intelligence.html">Intelligence</a>
+      <a class="active" href="/listing.html">Listing</a>
+      <a href="/hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="/dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="/login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="/aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -70,13 +65,12 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="intelligence.html">Wróć do Intelligence</a>
-      <a class="btn" href="qualitetmarket.html">Global TOP</a>
+      <a class="btn btn-secondary" href="/intelligence.html">Wróć do Intelligence</a>
+      <a class="btn" href="/qualitetmarket.html">Global TOP</a>
       <button class="btn btn-primary" type="button" id="btnGenerate">Generuj</button>
       <button class="btn" type="button" id="btnClear">Wyczyść</button>
-      <!-- ✅ NOWE: 1 klik do CRM -->
       <button class="btn btn-primary" type="button" id="btnSaveCrm">Zapisz do CRM</button>
-      <a class="btn" href="dashboard.html" data-auth-only>Otwórz CRM</a>
+      <a class="btn" href="/dashboard.html" data-auth-only>Otwórz CRM</a>
     </div>
 
     <div class="hr"></div>
@@ -226,12 +220,24 @@
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script>
+  // ===== Plan badge (spójny kanon) =====
+  function normalizePlan(p){
+    p = String(p || "").toLowerCase().trim();
+    return (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+  }
+  (function renderPlanBadge(){
+    const el = document.getElementById("planBadge");
+    if (!el) return;
+    const plan = normalizePlan(localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "basic");
+    el.textContent = plan.toUpperCase();
+    el.setAttribute("data-plan", plan);
+  })();
+
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "login.html";
+    window.location.href = "/login.html";
   }
 
-  // auth CTA
   (function () {
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
@@ -388,12 +394,7 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
 
     const tags = buildTags(baseName, f, channel);
 
-    return {
-      title: t,
-      bullets: bullets.map(x => "• " + x).join("\n"),
-      desc,
-      tags
-    };
+    return { title: t, bullets: bullets.map(x => "• " + x).join("\n"), desc, tags };
   }
 
   function writeOutputs(o){
@@ -499,7 +500,7 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
     } catch {}
   }
 
-  // ✅ NOWE: CRM helpers
+  // CRM helpers
   function loadCRM(){
     try {
       const raw = localStorage.getItem(LS_CRM);
@@ -507,15 +508,10 @@ ${note ? note + "\n\n" : ""}Wysyłam szybko.`;
       return Array.isArray(list) ? list : [];
     } catch { return []; }
   }
-  function saveCRM(list){
-    localStorage.setItem(LS_CRM, JSON.stringify(list));
-  }
-  function uid(){
-    return "i_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-  }
+  function saveCRM(list){ localStorage.setItem(LS_CRM, JSON.stringify(list)); }
+  function uid(){ return "i_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
 
   function saveToCrm(){
-    // upewnij się, że listing jest wygenerowany
     const res = generate();
     if (!res) return;
 
@@ -558,7 +554,7 @@ ${res.notes || "—"}`.trim()
     saveCRM(list);
 
     toast("Zapisano do CRM (status: Wystawione).", "success");
-    window.location.href = "dashboard.html";
+    window.location.href = "/dashboard.html";
   }
 
   function bind(){
@@ -580,7 +576,6 @@ Tagi: ${$("#outTags").value}`;
       copyText(text);
     });
 
-    // ✅ NOWE: Zapis do CRM
     $("#btnSaveCrm").addEventListener("click", saveToCrm);
 
     $("#channel").addEventListener("change", ()=> {
@@ -592,7 +587,6 @@ Tagi: ${$("#outTags").value}`;
     bind();
     loadPrefill();
 
-    // mobile menu
     (function () {
       const root = document.querySelector("[data-nav-root]");
       const btn = document.querySelector("[data-nav-toggle]");
