@@ -1,75 +1,43 @@
-const VERSION = "qm-sw-v6";
-const STATIC_CACHE = `qm-static-${VERSION}`;
-const RUNTIME_CACHE = `qm-runtime-${VERSION}`;
+/* qm-sw-v5 */
+const VERSION = "qm-sw-v5";
 
-// Realne pliki z Twojego repo (icons/, manifest.webmanifest)
-// Wszystko relatywnie "./" — zero absolutów.
+const PRECACHE = `qm-precache-${VERSION}`;
+const RUNTIME_ASSETS = `qm-assets-${VERSION}`;
+
+// Precache: tylko stałe pliki, relatywnie "./"
 const PRECACHE_URLS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./js/planGuard.js",
   "./manifest.webmanifest",
+
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",
-  "./icons/favicon.ico",
+
+  // favicon – patrz punkt 3 poniżej (robimy zero 404)
+  "./favicon.ico"
 ];
 
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
-  event.waitUntil((async () => {
-    const cache = await caches.open(STATIC_CACHE);
-
-    // Precache “best effort” – tylko OK odpowiedzi
-    await Promise.all(PRECACHE_URLS.map(async (url) => {
-      try {
-        const res = await fetch(url, { cache: "no-cache" });
-        if (res && res.ok) await cache.put(url, res.clone());
-      } catch (_) {}
-    }));
-  })());
+  event.waitUntil(
+    caches.open(PRECACHE).then((cache) => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(
-      keys
-        .filter(k => k.startsWith("qm-") && k !== STATIC_CACHE && k !== RUNTIME_CACHE)
-        .map(k => caches.delete(k))
+      keys.map((k) => {
+        if (k !== PRECACHE && k !== RUNTIME_ASSETS) return caches.delete(k);
+      })
     );
     await self.clients.claim();
   })());
 });
-
-const isHTML = (req) =>
-  req.mode === "navigate" ||
-  (req.headers.get("accept") || "").includes("text/html");
-
-const isAssetPath = (pathname) =>
-  /\.(js|css|png|jpg|jpeg|webp|svg|ico|json|webmanifest|woff2?|ttf|eot)$/i.test(pathname);
-
-// Helper: normalizuj "/" -> "./index.html" w cache match
-async function matchStatic(urlOrReq) {
-  const req = (urlOrReq instanceof Request) ? urlOrReq : new Request(urlOrReq);
-  let cached = await caches.match(req);
-  if (cached) return cached;
-
-  const u = new URL(req.url);
-
-  if (u.origin === self.location.origin && (u.pathname === "/" || u.pathname.endsWith("/"))) {
-    cached = await caches.match("./index.html");
-    if (cached) return cached;
-  }
-
-  if (u.origin === self.location.origin && u.pathname === "/index.html") {
-    cached = await caches.match("./index.html");
-    if (cached) return cached;
-  }
-
-  return null;
-}
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
@@ -78,54 +46,38 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // 1) NAV / HTML — network-first, bez cache HTML
-  if (isHTML(req) || url.pathname.endsWith(".html") || url.pathname === "/") {
+  // HTML: network-first, NIE zapisujemy HTML do runtime cache
+  const isHTML =
+    req.mode === "navigate" ||
+    (req.headers.get("accept") || "").includes("text/html") ||
+    url.pathname.endsWith(".html") ||
+    url.pathname === "/" ||
+    url.pathname.endsWith("/");
+
+  if (isHTML) {
     event.respondWith((async () => {
       try {
         const fresh = await fetch(req, { cache: "no-store" });
-        if (fresh && fresh.ok) return fresh;
-        return (await matchStatic(req)) || Response.error();
-      } catch (_) {
-        return (await matchStatic(req)) || Response.error();
+        return fresh;
+      } catch {
+        const cache = await caches.open(PRECACHE);
+        const fallback = await cache.match("./index.html");
+        return fallback || new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } });
       }
     })());
     return;
   }
 
-  // 2) Assets — stale-while-revalidate
-  if (isAssetPath(url.pathname)) {
-    event.respondWith((async () => {
-      const staticHit = await matchStatic(req);
-      if (staticHit) {
-        event.waitUntil((async () => {
-          try {
-            const res = await fetch(req);
-            if (res && res.ok) {
-              const cache = await caches.open(RUNTIME_CACHE);
-              await cache.put(req, res.clone());
-            }
-          } catch (_) {}
-        })());
-        return staticHit;
-      }
+  // Assets: stale-while-revalidate
+  event.respondWith((async () => {
+    const cache = await caches.open(RUNTIME_ASSETS);
+    const cached = await cache.match(req);
 
-      const cache = await caches.open(RUNTIME_CACHE);
-      const cached = await cache.match(req);
+    const fetchPromise = fetch(req).then((res) => {
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    }).catch(() => null);
 
-      const refresh = (async () => {
-        try {
-          const res = await fetch(req);
-          if (res && res.ok) await cache.put(req, res.clone());
-          return res;
-        } catch (_) {
-          return null;
-        }
-      })();
-
-      return cached || (await refresh) || Response.error();
-    })());
-    return;
-  }
-
-  // 3) reszta: passthrough
+    return cached || (await fetchPromise) || new Response("", { status: 504 });
+  })());
 });
