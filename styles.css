@@ -666,3 +666,45 @@ button{ font-family:inherit; }
     align-items: start;
   }
 }
+/* =========================
+   QM FINAL PATCH (compat + edge-cases)
+   Wklej NA KONIEC styles.css
+   ========================= */
+
+/* 1) Bottom bar space: liczone z safe-area */
+.content{
+  padding-bottom: calc(var(--bottomH) + env(safe-area-inset-bottom) + 18px);
+}
+.wrap{
+  padding-bottom: calc(var(--bottomH) + env(safe-area-inset-bottom) + 18px);
+}
+
+/* 2) Jeśli strona ma data-no-shell="1" — nie rezerwuj miejsca na bottom nav */
+body[data-no-shell="1"] .content,
+body[data-no-shell="1"] .wrap{
+  padding-bottom: 32px;
+}
+
+/* 3) Desktop: topbar ma zniknąć całkiem (bez height:0 artefaktów) */
+@media (min-width: 980px){
+  .topbar{ display:none !important; }
+}
+
+/* 4) Klikalność/disabled linków (guard) */
+a[aria-disabled="true"]{
+  pointer-events: none;
+}
+
+/* 5) Active state: lekko mocniej, żeby było “premium” */
+.s-item.active,
+.b-item.active{
+  box-shadow: 0 10px 26px rgba(0,0,0,.25);
+}
+
+/* 6) Content-inner: zabezpieczenie przed rozlewaniem długich stringów */
+.content-inner{
+  min-width: 0;
+}
+.card, .panel, .hero-card{
+  overflow-wrap: anywhere;
+}
