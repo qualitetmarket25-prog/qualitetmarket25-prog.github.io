@@ -4,22 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Aktywuj PRO</title>
-  <link rel="stylesheet" href="styles.css">
 
-  <!-- planGuard fallback: /js/ oraz root -->
-  <script>
-    (function () {
-      const v = "20260228-3";
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src + (src.includes("?") ? "&" : "?") + "v=" + v;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- ZAWSZE absolutne ścieżki -->
+  <script defer src="/js/planGuard.js"></script>
+  <script defer src="/app.js"></script>
 </head>
 
 <body>
@@ -37,14 +29,14 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="dashboard.html">Dashboard</a>
+      <a href="/index.html">Start</a>
+      <a href="/cennik.html">Plany</a>
+      <a href="/qualitetmarket.html">QualitetMarket</a>
+      <a href="/dashboard.html">Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm" href="cennik.html">Wróć</a>
+      <a class="btn btn-sm" href="/cennik.html">Wróć</a>
     </div>
   </div>
 </div>
@@ -61,10 +53,10 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <button class="btn btn-primary" type="button" onclick="activatePlanDemo('pro')">Aktywuj PRO</button>
-      <button class="btn btn-primary" type="button" onclick="activatePlanDemo('elite')">Aktywuj ELITE</button>
-      <a class="btn" href="login.html">Logowanie</a>
-      <a class="btn btn-secondary" href="dashboard.html">Mam już dostęp</a>
+      <button class="btn btn-primary" type="button" id="btnPro">Aktywuj PRO</button>
+      <button class="btn btn-primary" type="button" id="btnElite">Aktywuj ELITE</button>
+      <a class="btn" href="/login.html">Logowanie</a>
+      <a class="btn btn-secondary" href="/dashboard.html">Mam już dostęp</a>
     </div>
 
     <div class="hr"></div>
@@ -80,65 +72,59 @@
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
-<!-- app.js fallback: assets/ oraz root -->
 <script>
-  (function () {
-    const v = "20260228-3";
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src + (src.includes("?") ? "&" : "?") + "v=" + v;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
-
-<script>
+  // --- helpers ---
   function isLoggedIn() {
     return localStorage.getItem("is_logged_in") === "true";
   }
 
-  function setPlanEverywhere(planLower) {
+  function normalizePlan(planLower) {
     const p = String(planLower || "").toLowerCase().trim();
-    const normalized = (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+    return (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+  }
 
-    // canonical
-    localStorage.setItem("qm_plan", normalized);
-    localStorage.setItem("qm_plan_v1", JSON.stringify(normalized));
+  // KANON: tylko te dwa klucze
+  function setPlanCanonical(planLower) {
+    const plan = normalizePlan(planLower);
 
-    // legacy compat
-    localStorage.setItem("status", normalized.toUpperCase());
-    localStorage.setItem("plan", normalized.toUpperCase());
-    localStorage.setItem("last_paid_plan", normalized.toUpperCase());
+    localStorage.setItem("qm_plan_v1", plan);
+    localStorage.setItem("qm_status_v1", plan);
+    localStorage.setItem("qm_plan_updated_at", String(Date.now()));
 
-    // pro flag
-    if (normalized === "pro" || normalized === "elite") localStorage.setItem("proStatus", "true");
-    else localStorage.removeItem("proStatus");
+    // (opcjonalnie) wygaszanie demo 30 dni
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    localStorage.setItem("qm_plan_expires_at", d.toISOString());
+
+    return plan;
+  }
+
+  function renderPlanBadge() {
+    const el = document.querySelector("[data-qm-plan]");
+    if (!el) return;
+    const plan = normalizePlan(localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "basic");
+    el.textContent = plan.toUpperCase();
+    el.setAttribute("data-plan", plan);
   }
 
   function activatePlanDemo(planLower){
-    // jeśli nie zalogowany -> login
     if (!isLoggedIn()) {
-      location.href = "login.html?back=" + encodeURIComponent("dashboard.html");
+      location.href = "/login.html?back=" + encodeURIComponent("/dashboard.html");
       return;
     }
+    const plan = setPlanCanonical(planLower);
 
-    // ustaw plan spójnie
+    // Jeżeli masz centralny setter w app.js, to go też wołamy (ale bez wymuszania)
     if (window.QM && typeof window.QM.setPlan === "function") {
-      // oczekujemy, że QM.setPlan przyjmie pro/elite; jeśli nie, i tak dopiszemy ręcznie
-      try { window.QM.setPlan(planLower); } catch {}
+      try { window.QM.setPlan(plan); } catch {}
     }
-    setPlanEverywhere(planLower);
 
-    // w demo ustaw ważność 30 dni
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    localStorage.setItem("plan_expires_at", d.toISOString());
-
-    location.href = "dashboard.html";
+    renderPlanBadge();
+    location.href = "/dashboard.html";
   }
+
+  document.getElementById("btnPro").addEventListener("click", () => activatePlanDemo("pro"));
+  document.getElementById("btnElite").addEventListener("click", () => activatePlanDemo("elite"));
 
   // mobilne menu (hamburger)
   (function () {
@@ -164,6 +150,9 @@
       if (e.key === "Escape") close();
     });
   })();
+
+  // od razu pokaż badge
+  renderPlanBadge();
 </script>
 
 </body>
