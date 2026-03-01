@@ -4,21 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Plany i Cennik – Zarabianie u Szefa</title>
-  <link rel="stylesheet" href="styles.css">
 
-  <!-- planGuard fallback: /js/ oraz root -->
-  <script>
-    (function () {
-      const tryLoad = (src, next) => {
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = src;
-        s.onerror = () => next && next();
-        document.head.appendChild(s);
-      };
-      tryLoad("js/planGuard.js", () => tryLoad("planGuard.js"));
-    })();
-  </script>
+  <!-- ✅ GitHub Pages: zawsze ./ -->
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- ✅ tylko te 2 skrypty, bez fallbacków -->
+  <script defer src="./js/planGuard.js"></script>
+  <script defer src="./app.js"></script>
 </head>
 
 <body>
@@ -36,18 +28,18 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="index.html">Start</a>
-      <a class="active" href="cennik.html">Plany</a>
-      <a href="qualitetmarket.html">QualitetMarket</a>
-      <a href="intelligence.html">Intelligence</a>
-      <a href="blueprints.html">Blueprints</a>
-      <a href="hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="dashboard.html">Dashboard</a>
+      <a href="./index.html">Start</a>
+      <a class="active" href="./cennik.html">Plany</a>
+      <a href="./qualitetmarket.html">QualitetMarket</a>
+      <a href="./intelligence.html">Intelligence</a>
+      <a href="./blueprints.html">Blueprints</a>
+      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="./dashboard.html">Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="login.html">Zaloguj</a>
-      <a class="btn btn-sm" href="aktywuj-pro.html">Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="./login.html">Zaloguj</a>
+      <a class="btn btn-sm" href="./aktywuj-pro.html">Aktywuj PRO</a>
     </div>
   </div>
 </div>
@@ -81,7 +73,7 @@
         <div class="hr"></div>
 
         <div class="p" style="font-weight:900;margin:0 0 10px;">0 zł (demo)</div>
-        <a class="btn" href="login.html">Zaloguj</a>
+        <a class="btn" href="./login.html">Zaloguj</a>
       </div>
 
       <!-- PRO -->
@@ -103,8 +95,8 @@
 
         <div class="p" style="font-weight:900;margin:0 0 10px;">99 zł / mies. (docelowo)</div>
         <div class="hero-cta" style="margin:0;">
-          <a class="btn btn-primary" href="aktywuj-pro.html">Aktywuj PRO</a>
-          <a class="btn" href="dashboard.html">Mam PRO</a>
+          <a class="btn btn-primary" href="./aktywuj-pro.html">Aktywuj PRO</a>
+          <a class="btn" href="./dashboard.html">Mam PRO</a>
         </div>
       </div>
 
@@ -126,7 +118,7 @@
         <div class="hr"></div>
 
         <div class="p" style="font-weight:900;margin:0 0 10px;">199 zł / mies. (docelowo)</div>
-        <a class="btn btn-secondary" href="aktywuj-pro.html">Aktywuj ELITE (demo)</a>
+        <a class="btn btn-secondary" href="./aktywuj-pro.html">Aktywuj ELITE (demo)</a>
       </div>
 
     </div>
@@ -144,20 +136,6 @@
 </div>
 
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
-
-<!-- assets/app.js fallback: assets/ oraz root -->
-<script>
-  (function () {
-    const tryLoad = (src, next) => {
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.onerror = () => next && next();
-      document.body.appendChild(s);
-    };
-    tryLoad("assets/app.js", () => tryLoad("app.js"));
-  })();
-</script>
 
 <script>
   // mobilne menu (hamburger)
