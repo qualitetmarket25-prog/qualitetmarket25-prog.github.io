@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QualitetMarket – Global TOP</title>
 
-  <!-- ✅ GitHub Pages: zawsze ./ -->
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
 
-  <!-- ✅ core + guard -->
-  <script defer src="./app.js"></script>
-  <script defer src="./js/planGuard.js"></script>
+  <!-- Guard pierwszy -->
+  <script defer src="/js/planGuard.js"></script>
+  <script defer src="/app.js"></script>
 </head>
 
 <body data-require="pro">
@@ -28,19 +30,19 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="./index.html">Start</a>
-      <a href="./cennik.html">Plany</a>
-      <a class="active" href="./qualitetmarket.html">QualitetMarket</a>
-      <a href="./intelligence.html">Intelligence</a>
-      <a href="./listing.html">Listing</a>
-      <a href="./blueprints.html">Blueprints</a>
-      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a href="/index.html">Start</a>
+      <a href="/cennik.html">Plany</a>
+      <a class="active" href="/qualitetmarket.html">QualitetMarket</a>
+      <a href="/intelligence.html">Intelligence</a>
+      <a href="/listing.html">Listing</a>
+      <a href="/blueprints.html">Blueprints</a>
+      <a href="/hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="/dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="/login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="/aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -56,11 +58,11 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="./hurtownie.html">Dodaj hurtownię (CSV)</a>
-      <a class="btn" href="./intelligence.html">Intelligence</a>
-      <a class="btn" href="./listing.html">Listing</a>
-      <a class="btn" href="./cennik.html">Plany</a>
-      <a class="btn" href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a class="btn btn-secondary" href="/hurtownie.html">Dodaj hurtownię (CSV)</a>
+      <a class="btn" href="/intelligence.html">Intelligence</a>
+      <a class="btn" href="/listing.html">Listing</a>
+      <a class="btn" href="/cennik.html">Plany</a>
+      <a class="btn" href="/dashboard.html" data-auth-only>Dashboard</a>
     </div>
   </div>
 
@@ -112,9 +114,38 @@
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script>
+  // ===== Plan badge + plan helpers (kanon) =====
+  function normalizePlan(p){
+    p = String(p || "").toLowerCase().trim();
+    return (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+  }
+
+  function getPlan(){
+    // KANON: plain string
+    const p = localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "";
+    const plan = normalizePlan(p);
+    if (plan === "basic" || plan === "pro" || plan === "elite") return plan;
+
+    // legacy fallback (tylko gdyby coś starego zostało)
+    const legacy = String(localStorage.getItem("status") || "").toUpperCase();
+    if (legacy === "ELITE") return "elite";
+    if (legacy === "PRO") return "pro";
+    return "basic";
+  }
+
+  function isElite(){ return getPlan() === "elite"; }
+
+  (function renderPlanBadge(){
+    const el = document.getElementById("planBadge");
+    if (!el) return;
+    const plan = getPlan();
+    el.textContent = plan.toUpperCase();
+    el.setAttribute("data-plan", plan);
+  })();
+
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "./login.html";
+    window.location.href = "/login.html";
   }
 
   (function () {
@@ -164,24 +195,6 @@
     const x = Number(n);
     if (!isFinite(x)) return "–";
     return x.toFixed(2) + " zł";
-  }
-
-  // ✅ canonical plan: qm_plan_v1 ("basic"|"pro"|"elite"), compat: status ("BASIC"|"PRO"|"ELITE")
-  function getPlan(){
-    const raw = localStorage.getItem("qm_plan_v1");
-    let p = "";
-    try { p = JSON.parse(raw); } catch { p = raw || ""; }
-    p = String(p || "").toLowerCase();
-    if (p === "basic" || p === "pro" || p === "elite") return p;
-
-    const legacy = String(localStorage.getItem("status") || "").toUpperCase();
-    if (legacy === "ELITE") return "elite";
-    if (legacy === "PRO") return "pro";
-    return "basic";
-  }
-
-  function isElite(){
-    return getPlan() === "elite";
   }
 
   function loadProductsBySupplier(){
@@ -242,11 +255,10 @@
       score: row.score,
       marginPct: row.marginPct
     }));
-    window.location.href = "./intelligence.html";
+    window.location.href = "/intelligence.html";
   }
 
   function goListing(row){
-    // ✅ twarda logika: listing 1-klik tylko ELITE
     if (!isElite()) {
       showToast("Listing 1-klik wymaga planu ELITE (upgrade w Cennik).", "error");
       return;
@@ -263,7 +275,7 @@
       features: "",
       notes: row.supplierName ? ("Hurtownia: " + row.supplierName) : ""
     }));
-    window.location.href = "./listing.html";
+    window.location.href = "/listing.html";
   }
 
   function renderTable(rows){
@@ -284,17 +296,10 @@
         <td><strong>${Math.round(Number(r.score||0))}</strong></td>
         <td>${escapeHtml(r.supplierName)}</td>
         <td style="white-space:nowrap;">
-          <button class="btn btn-sm btn-primary"
-            data-action="intel"
-            data-idx="${idx}">
+          <button class="btn btn-sm btn-primary" data-action="intel" data-idx="${idx}">
             Wyślij do Intelligence
           </button>
-
-          <!-- ✅ UX lock: planGuard sam zrobi disabled dla nie-ELITE -->
-          <button class="btn btn-sm btn-secondary"
-            data-action="listing"
-            data-require-btn="elite"
-            data-idx="${idx}">
+          <button class="btn btn-sm btn-secondary" data-action="listing" data-require-btn="elite" data-idx="${idx}">
             Zrób Listing
           </button>
         </td>
@@ -353,7 +358,6 @@
     bind();
     applyFiltersAndRender();
 
-    // mobilne menu
     (function () {
       const root = document.querySelector("[data-nav-root]");
       const btn = document.querySelector("[data-nav-toggle]");
