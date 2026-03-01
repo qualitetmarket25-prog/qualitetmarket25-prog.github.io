@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Intelligence – Zarabianie u Szefa</title>
 
-  <!-- ✅ GitHub Pages: zawsze ./ -->
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
 
-  <!-- ✅ core + guard -->
-  <script defer src="./app.js"></script>
-  <script defer src="./js/planGuard.js"></script>
+  <!-- Guard pierwszy -->
+  <script defer src="/js/planGuard.js"></script>
+  <script defer src="/app.js"></script>
 </head>
 
 <body data-require="elite">
@@ -28,19 +30,19 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="./index.html">Start</a>
-      <a href="./cennik.html">Plany</a>
-      <a href="./qualitetmarket.html">QualitetMarket</a>
-      <a class="active" href="./intelligence.html">Intelligence</a>
-      <a href="./listing.html">Listing</a>
-      <a href="./blueprints.html">Blueprints</a>
-      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
-      <a href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a href="/index.html">Start</a>
+      <a href="/cennik.html">Plany</a>
+      <a href="/qualitetmarket.html">QualitetMarket</a>
+      <a class="active" href="/intelligence.html">Intelligence</a>
+      <a href="/listing.html">Listing</a>
+      <a href="/blueprints.html">Blueprints</a>
+      <a href="/hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="/dashboard.html" data-auth-only>Dashboard</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="/login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="/aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -57,12 +59,12 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="./hurtownie.html">Zaciągnij z Hurtowni</a>
-      <a class="btn" href="./qualitetmarket.html">Global TOP</a>
-      <a class="btn" href="./listing.html">Listing</a>
-      <a class="btn" href="./blueprints.html">Blueprints</a>
-      <a class="btn" href="./dashboard.html" data-auth-only>Dashboard</a>
-      <a class="btn" href="./cennik.html">Upgrade planu</a>
+      <a class="btn btn-secondary" href="/hurtownie.html">Zaciągnij z Hurtowni</a>
+      <a class="btn" href="/qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="/listing.html">Listing</a>
+      <a class="btn" href="/blueprints.html">Blueprints</a>
+      <a class="btn" href="/dashboard.html" data-auth-only>Dashboard</a>
+      <a class="btn" href="/cennik.html">Upgrade planu</a>
     </div>
   </div>
 
@@ -208,12 +210,24 @@
 <div class="footer">© 2026 Zarabianie u Szefa × QualitetMarket</div>
 
 <script>
+  // ===== Plan badge (spójny kanon) =====
+  function normalizePlan(p){
+    p = String(p || "").toLowerCase().trim();
+    return (p === "elite") ? "elite" : (p === "pro" ? "pro" : "basic");
+  }
+  (function renderPlanBadge(){
+    const el = document.getElementById("planBadge");
+    if (!el) return;
+    const plan = normalizePlan(localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "basic");
+    el.textContent = plan.toUpperCase();
+    el.setAttribute("data-plan", plan);
+  })();
+
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "./login.html";
+    window.location.href = "/login.html";
   }
 
-  // guest vs logged
   (function () {
     const logged = localStorage.getItem("is_logged_in") === "true";
     document.querySelectorAll("[data-guest-only]").forEach(el => el.style.display = logged ? "none" : "");
@@ -314,7 +328,6 @@
     setAudit("—");
   }
 
-  // Ctrl+Shift+K preset costs
   (function setupGlobalCosts(){
     const LS_COST_PRESET = "qm_cost_preset_v1";
 
@@ -385,7 +398,6 @@
     window.qmApplyPreset = applyPreset;
   })();
 
-  // Prefill from QualitetMarket
   (function prefillFromQualitetMarket(){
     const LS_INTEL_PREFILL = "qm_intel_prefill_v1";
 
@@ -420,7 +432,6 @@
     localStorage.removeItem(LS_INTEL_PREFILL);
   })();
 
-  // Copy result
   (function bindCopy(){
     const btn = document.getElementById("qmCopyResultBtn");
     if (!btn) return;
@@ -450,7 +461,6 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
-  // Target price
   (function bindTarget(){
     const btn = document.getElementById("qmTargetPriceBtn");
     if (!btn) return;
@@ -489,7 +499,6 @@ Score: ${Math.round(res.score)}`;
     });
   })();
 
-  // Intelligence -> Listing prefill
   (function bindListing(){
     const btn = document.getElementById("qmGoListingBtn");
     if (!btn) return;
@@ -513,11 +522,10 @@ Score: ${Math.round(res.score)}`;
         notes: ""
       }));
 
-      window.location.href = "./listing.html";
+      window.location.href = "/listing.html";
     });
   })();
 
-  // mobile menu
   (function () {
     const root = document.querySelector("[data-nav-root]");
     const btn = document.querySelector("[data-nav-toggle]");
