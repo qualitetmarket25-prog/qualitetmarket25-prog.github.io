@@ -1,11 +1,4 @@
-if (document.body?.dataset?.noShell === "1") {
-  handlePlanFromQuery();
-  applyGuards();
-  renderPlanBadge();
-  renderAuthUI();
-  bindLogout();
-  return;
-}(() => {
+(() => {
   "use strict";
 
   // ===============================
@@ -59,9 +52,11 @@ if (document.body?.dataset?.noShell === "1") {
   function writePlan(plan) {
     const p = normalizePlan(plan);
 
+    // canonical
     localStorage.setItem("qm_plan_v1", JSON.stringify({ tier: p, updatedAt: Date.now() }));
-    localStorage.setItem("qm_plan", p);
 
+    // compat (nie ruszać nazw)
+    localStorage.setItem("qm_plan", p);
     localStorage.setItem("status", p.toUpperCase());
     localStorage.setItem("plan", p.toUpperCase());
     localStorage.setItem("last_paid_plan", p.toUpperCase());
@@ -213,7 +208,6 @@ if (document.body?.dataset?.noShell === "1") {
   function iconHTML(iconKey, mode) {
     const svg = ICON[iconKey] || "";
     const cls = mode === "sidebar" ? "s-icon" : "b-icon";
-    // currentColor zadziała dzięki CSS (kolor tekstu)
     return `<span class="${cls}" aria-hidden="true" style="display:inline-flex;color:rgba(234,240,255,.92)">${svg}</span>`;
   }
 
@@ -302,6 +296,17 @@ if (document.body?.dataset?.noShell === "1") {
   // BOOT
   // ===============================
   function boot() {
+    // === FIX: noShell MUSI BYĆ TU, na samej górze boot() ===
+    if (document.body?.dataset?.noShell === "1") {
+      window.QM = { getPlan, setPlan, hasAtLeast, isElite, isLogged };
+      handlePlanFromQuery();
+      applyGuards();
+      renderPlanBadge();
+      renderAuthUI();
+      bindLogout();
+      return;
+    }
+
     window.QM = { getPlan, setPlan, hasAtLeast, isElite, isLogged };
 
     ensureShell();
