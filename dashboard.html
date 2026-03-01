@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b0f14" />
   <title>Dashboard – QualitetMarket CRM</title>
 
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icons/icon-192.png">
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/favicon.ico">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css" />
 
   <!-- Guard pierwszy -->
-  <script defer src="/js/planGuard.js"></script>
-  <script defer src="/app.js"></script>
+  <script defer src="./js/planGuard.js"></script>
+  <script defer src="./app.js"></script>
 
   <style>
     .grid-3x { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
@@ -41,7 +43,7 @@
   </style>
 </head>
 
-<body data-require="pro">
+<body data-require="pro" data-no-shell="1">
 
 <div class="nav" data-nav-root>
   <div class="nav-inner">
@@ -56,18 +58,18 @@
     </button>
 
     <div class="nav-links" data-nav-links>
-      <a href="/index.html">Start</a>
-      <a href="/cennik.html">Plany</a>
-      <a href="/qualitetmarket.html">QualitetMarket</a>
-      <a href="/intelligence.html">Intelligence</a>
-      <a href="/listing.html">Listing</a>
-      <a class="active" href="/dashboard.html" data-auth-only>Dashboard</a>
-      <a href="/hurtownie.html" id="hurtownieLink">Hurtownie</a>
+      <a href="./index.html">Start</a>
+      <a href="./cennik.html">Plany</a>
+      <a href="./qualitetmarket.html">QualitetMarket</a>
+      <a href="./intelligence.html">Intelligence</a>
+      <a href="./listing.html">Listing</a>
+      <a class="active" href="./dashboard.html" data-auth-only>Dashboard</a>
+      <a href="./hurtownie.html" id="hurtownieLink">Hurtownie</a>
 
       <div class="nav-links-sep"></div>
 
-      <a class="btn btn-sm btn-primary" href="/login.html" data-guest-only>Zaloguj</a>
-      <a class="btn btn-sm" href="/aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
+      <a class="btn btn-sm btn-primary" href="./login.html" data-guest-only>Zaloguj</a>
+      <a class="btn btn-sm" href="./aktywuj-pro.html" data-guest-only>Aktywuj PRO</a>
 
       <button class="btn btn-sm btn-danger" type="button" onclick="logout()" data-auth-only>Wyloguj</button>
     </div>
@@ -84,9 +86,9 @@
     <div class="hr"></div>
 
     <div class="hero-cta">
-      <a class="btn btn-secondary" href="/qualitetmarket.html">Global TOP</a>
-      <a class="btn" href="/intelligence.html">Intelligence</a>
-      <a class="btn" href="/listing.html">Listing</a>
+      <a class="btn btn-secondary" href="./qualitetmarket.html">Global TOP</a>
+      <a class="btn" href="./intelligence.html">Intelligence</a>
+      <a class="btn" href="./listing.html">Listing</a>
       <button class="btn btn-primary" id="btnNew" type="button">+ Dodaj pozycję</button>
       <button class="btn btn-danger" id="btnWipe" type="button">Wyczyść CRM</button>
     </div>
@@ -289,7 +291,14 @@
   function renderPlanBadge(){
     const el = document.getElementById("planBadge");
     if (!el) return;
-    const plan = normalizePlan(localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "basic");
+    const raw = localStorage.getItem("qm_plan_v1") || localStorage.getItem("qm_status_v1") || "basic";
+    let plan = "basic";
+    try {
+      const j = JSON.parse(raw);
+      plan = normalizePlan(j?.tier ?? j?.plan ?? j?.status ?? j);
+    } catch {
+      plan = normalizePlan(raw);
+    }
     el.textContent = plan.toUpperCase();
     el.setAttribute("data-plan", plan);
   }
@@ -297,7 +306,7 @@
 
   function logout() {
     localStorage.setItem("is_logged_in", "false");
-    window.location.href = "/login.html";
+    window.location.href = "./login.html";
   }
 
   (function () {
