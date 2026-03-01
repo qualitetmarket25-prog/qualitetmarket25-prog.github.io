@@ -116,19 +116,35 @@
     const totalEl = document.getElementById("total");
     const msg = document.getElementById("msg");
     const badge = document.getElementById("statusBadge");
-
-    const raw = localStorage.getItem(LS_CART);
-    const item = raw ? JSON.parse(raw) : null;
+    const payBtn = document.getElementById("payBtn");
 
     function money(n){ return (Math.round(n * 100) / 100).toFixed(2) + " €"; }
 
+    // ---- 1) read order_v1 first, fallback cart
+    let order = null;
+    try {
+      const rawOrder = localStorage.getItem(LS_ORDER);
+      order = rawOrder ? JSON.parse(rawOrder) : null;
+    } catch {}
+
+    let item = null;
+    if (order?.items?.length) {
+      item = order.items[0];          // z cart.html zapisujemy items[0]
+    } else {
+      try {
+        const rawCart = localStorage.getItem(LS_CART);
+        item = rawCart ? JSON.parse(rawCart) : null;  // fallback stary format
+      } catch {}
+    }
+
+    // ---- 2) render summary
     if (!item) {
       box.innerHTML = "<div class='err'>Koszyk jest pusty. Wróć do koszyka.</div>";
-      document.getElementById("payBtn").disabled = true;
+      payBtn.disabled = true;
       badge.textContent = "Status: brak produktu";
       badge.className = "badge err";
     } else {
-      const price = Number(item.price || 0);
+      const price = Number(item.price || order?.totals?.subtotal || 0);
       const vat = price * VAT_RATE;
       const total = price + vat + SHIPPING_EUR;
 
@@ -142,16 +158,27 @@
       totalEl.textContent = money(total);
     }
 
-    // ---- Stripe-ready: tu docelowo robimy call do backendu po PaymentIntent / Checkout Session.
-    // Na razie: tworzymy "order" i symulujemy success.
+    // ---- Stripe-ready: docelowo call do backendu po Checkout Session.
+    // Na razie: zapis order_v1 + symulacja success.
     document.getElementById("checkoutForm").addEventListener("submit", (e) => {
       e.preventDefault();
       if (!item) return;
 
-      const order = {
-        id: "ord_" + Math.random().toString(16).slice(2) + Date.now(),
-        createdAt: new Date().toISOString(),
-        product: item,
+      const price = Number(item.price || 0);
+      const vat = price * VAT_RATE;
+      const total = price + vat + SHIPPING_EUR;
+
+      const nextOrder = {
+        id: (order && order.id) ? order.id : ("ord_" + Math.random().toString(16).slice(2) + Date.now()),
+        createdAt: (order && order.createdAt) ? order.createdAt : new Date().toISOString(),
+        currency: (order && order.currency) ? order.currency : "EUR",
+        items: [{
+          id: item.id ?? item.sku ?? item.slug ?? null,
+          name: item.name ?? item.title ?? "Produkt",
+          price: price,
+          qty: 1
+        }],
+        totals: { subtotal: price, shipping: SHIPPING_EUR, vat: vat, total: total },
         customer: {
           fullName: document.getElementById("fullName").value.trim(),
           email: document.getElementById("email").value.trim(),
@@ -165,7 +192,7 @@
         provider: "stripe"
       };
 
-      localStorage.setItem(LS_ORDER, JSON.stringify(order));
+      localStorage.setItem(LS_ORDER, JSON.stringify(nextOrder));
 
       badge.textContent = "Status: inicjalizacja płatności…";
       badge.className = "badge";
@@ -173,10 +200,9 @@
       msg.textContent = "Tworzę sesję płatności (demo)…";
       msg.className = "";
 
-      // symulacja 1.2s
       setTimeout(() => {
-        order.status = "paid_demo";
-        localStorage.setItem(LS_ORDER, JSON.stringify(order));
+        nextOrder.status = "paid_demo";
+        localStorage.setItem(LS_ORDER, JSON.stringify(nextOrder));
         msg.textContent = "✅ Płatność zakończona (DEMO). Następny krok: realny Stripe.";
         msg.className = "ok";
         badge.textContent = "Status: opłacone (demo)";
