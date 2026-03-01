@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Checkout</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .wrap{max-width:980px;margin:48px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .card{border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:16px;background:#fff}
+    .h{font-size:26px;font-weight:800;margin:0 0 6px}
+    .muted{opacity:.7}
+    label{display:block;font-weight:700;margin:12px 0 6px}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,.15);font-size:14px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:520px){.row{grid-template-columns:1fr}}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 14px;border-radius:12px;border:0;font-weight:800;cursor:pointer}
+    .btn-primary{background:#111;color:#fff;width:100%}
+    .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,.15)}
+    .sumline{display:flex;justify-content:space-between;margin:10px 0}
+    .hr{height:1px;background:rgba(0,0,0,.08);margin:12px 0}
+    .badge{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.10);font-weight:800}
+    .ok{color:#0a7a2f}
+    .err{color:#b42318}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    a{color:inherit}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <a class="btn btn-ghost" href="cart.html">← Wróć do koszyka</a>
+      <span id="statusBadge" class="badge muted">Status: gotowe do płatności</span>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h1 class="h">Dane do zamówienia</h1>
+        <div class="muted">Wersja “Stripe-ready” (na razie symulacja PaymentIntent).</div>
+
+        <form id="checkoutForm">
+          <label>Imię i nazwisko</label>
+          <input id="fullName" required placeholder="Jan Kowalski" />
+
+          <label>Email</label>
+          <input id="email" type="email" required placeholder="jan@domain.pl" />
+
+          <label>Telefon</label>
+          <input id="phone" required placeholder="+48 123 456 789" />
+
+          <label>Adres</label>
+          <input id="addr1" required placeholder="Ulica i numer" />
+
+          <div class="row">
+            <div>
+              <label>Miasto</label>
+              <input id="city" required placeholder="Poznań" />
+            </div>
+            <div>
+              <label>Kod pocztowy</label>
+              <input id="zip" required placeholder="00-000" />
+            </div>
+          </div>
+
+          <label>Kraj</label>
+          <select id="country">
+            <option value="PL" selected>Polska</option>
+            <option value="DE">Niemcy</option>
+            <option value="CZ">Czechy</option>
+            <option value="SK">Słowacja</option>
+            <option value="NL">Holandia</option>
+          </select>
+
+          <div class="hr"></div>
+
+          <button id="payBtn" class="btn btn-primary" type="submit">
+            Zapłać teraz (Stripe)
+          </button>
+
+          <div id="msg" style="margin-top:10px;font-weight:800;"></div>
+          <div class="muted" style="margin-top:6px;font-size:13px;">
+            Następny krok: podepniemy prawdziwe Stripe Checkout / PaymentIntent przez backend (Cloudflare Worker / Netlify).
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 8px;font-size:18px;font-weight:900;">Podsumowanie</h2>
+
+        <div id="productBox" class="muted">Ładowanie…</div>
+
+        <div class="hr"></div>
+
+        <div class="sumline"><span>Wysyłka</span><strong id="ship">0.00 €</strong></div>
+        <div class="sumline"><span>VAT</span><strong id="vat">0.00 €</strong></div>
+        <div class="hr"></div>
+        <div class="sumline" style="font-size:18px;">
+          <span>Razem</span><strong id="total">0.00 €</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- config (na start stałe; potem liczenie per kraj / stawki)
+    const VAT_RATE = 0.23;          // 23% PL (demo)
+    const SHIPPING_EUR = 0.00;      // Free EU Shipping (zgodnie z product)
+    const LS_CART = "cart";
+    const LS_ORDER = "order_v1";
+
+    const box = document.getElementById("productBox");
+    const shipEl = document.getElementById("ship");
+    const vatEl = document.getElementById("vat");
+    const totalEl = document.getElementById("total");
+    const msg = document.getElementById("msg");
+    const badge = document.getElementById("statusBadge");
+
+    const raw = localStorage.getItem(LS_CART);
+    const item = raw ? JSON.parse(raw) : null;
+
+    function money(n){ return (Math.round(n * 100) / 100).toFixed(2) + " €"; }
+
+    if (!item) {
+      box.innerHTML = "<div class='err'>Koszyk jest pusty. Wróć do koszyka.</div>";
+      document.getElementById("payBtn").disabled = true;
+      badge.textContent = "Status: brak produktu";
+      badge.className = "badge err";
+    } else {
+      const price = Number(item.price || 0);
+      const vat = price * VAT_RATE;
+      const total = price + vat + SHIPPING_EUR;
+
+      box.innerHTML = `
+        <div style="font-weight:900;font-size:16px;">${item.name}</div>
+        <div class="muted" style="margin-top:6px;">Cena: <strong>${money(price)}</strong></div>
+      `;
+
+      shipEl.textContent = money(SHIPPING_EUR);
+      vatEl.textContent = money(vat);
+      totalEl.textContent = money(total);
+    }
+
+    // ---- Stripe-ready: tu docelowo robimy call do backendu po PaymentIntent / Checkout Session.
+    // Na razie: tworzymy "order" i symulujemy success.
+    document.getElementById("checkoutForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!item) return;
+
+      const order = {
+        id: "ord_" + Math.random().toString(16).slice(2) + Date.now(),
+        createdAt: new Date().toISOString(),
+        product: item,
+        customer: {
+          fullName: document.getElementById("fullName").value.trim(),
+          email: document.getElementById("email").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+          addr1: document.getElementById("addr1").value.trim(),
+          city: document.getElementById("city").value.trim(),
+          zip: document.getElementById("zip").value.trim(),
+          country: document.getElementById("country").value
+        },
+        status: "payment_pending",
+        provider: "stripe"
+      };
+
+      localStorage.setItem(LS_ORDER, JSON.stringify(order));
+
+      badge.textContent = "Status: inicjalizacja płatności…";
+      badge.className = "badge";
+
+      msg.textContent = "Tworzę sesję płatności (demo)…";
+      msg.className = "";
+
+      // symulacja 1.2s
+      setTimeout(() => {
+        order.status = "paid_demo";
+        localStorage.setItem(LS_ORDER, JSON.stringify(order));
+        msg.textContent = "✅ Płatność zakończona (DEMO). Następny krok: realny Stripe.";
+        msg.className = "ok";
+        badge.textContent = "Status: opłacone (demo)";
+        badge.className = "badge ok";
+      }, 1200);
+    });
+  </script>
+</body>
+</html>
