@@ -94,9 +94,15 @@
         <div class="hr"></div>
 
         <div class="p" style="font-weight:900;margin:0 0 10px;">99 zł / mies. (docelowo)</div>
+
+        <!-- ✅ Stripe Checkout (TEST) -->
         <div class="hero-cta" style="margin:0;">
-          <a class="btn btn-primary" href="./aktywuj-pro.html">Aktywuj PRO</a>
+          <button class="btn btn-primary" type="button" id="buyProBtn">Kup PRO (test)</button>
           <a class="btn" href="./dashboard.html">Mam PRO</a>
+        </div>
+
+        <div class="muted-xs" style="margin-top:10px;opacity:.75;">
+          Płatność testowa przez Stripe Checkout.
         </div>
       </div>
 
@@ -118,7 +124,13 @@
         <div class="hr"></div>
 
         <div class="p" style="font-weight:900;margin:0 0 10px;">199 zł / mies. (docelowo)</div>
-        <a class="btn btn-secondary" href="./aktywuj-pro.html">Aktywuj ELITE (demo)</a>
+
+        <!-- ✅ Stripe Checkout (TEST) -->
+        <button class="btn btn-secondary" type="button" id="buyEliteBtn">Kup ELITE (test)</button>
+
+        <div class="muted-xs" style="margin-top:10px;opacity:.75;">
+          Płatność testowa przez Stripe Checkout.
+        </div>
       </div>
 
     </div>
@@ -162,6 +174,69 @@
       if (e.key === "Escape") close();
     });
   })();
+</script>
+
+<script>
+  // ========= Stripe Checkout (TEST) =========
+  // Worker API (z Twojego screena)
+  const API_BASE = "https://noisy-paper-01f8.qualitetmarket25.workers.dev";
+
+  function getEmail() {
+    // preferuj zapisany email; jak nie ma, spytaj
+    let email = (localStorage.getItem("qm_email") || "").trim().toLowerCase();
+    if (!email) {
+      email = prompt("Podaj email do aktywacji planu (zostanie zapisany):", "") || "";
+      email = email.trim().toLowerCase();
+      if (email) localStorage.setItem("qm_email", email);
+    }
+    return email;
+  }
+
+  async function buy(plan) {
+    const email = getEmail();
+    if (!email || !email.includes("@")) {
+      alert("Brak poprawnego emaila.");
+      return;
+    }
+
+    // UX: blokada przycisków podczas requestu
+    const proBtn = document.getElementById("buyProBtn");
+    const eliteBtn = document.getElementById("buyEliteBtn");
+    if (proBtn) proBtn.disabled = true;
+    if (eliteBtn) eliteBtn.disabled = true;
+
+    try {
+      const r = await fetch(`${API_BASE}/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          plan, // "pro" | "elite"
+          successPath: "/success.html",
+          cancelPath: "/cennik.html"
+        })
+      });
+
+      const data = await r.json().catch(() => ({}));
+
+      if (!r.ok || !data.url) {
+        alert((data && data.error) ? data.error : "Błąd tworzenia sesji Stripe.");
+        return;
+      }
+
+      // redirect do Stripe Checkout
+      location.href = data.url;
+
+    } catch (e) {
+      alert("Błąd sieci / CORS. Sprawdź Worker i APP_ORIGIN.");
+    } finally {
+      if (proBtn) proBtn.disabled = false;
+      if (eliteBtn) eliteBtn.disabled = false;
+    }
+  }
+
+  document.getElementById("buyProBtn")?.addEventListener("click", () => buy("pro"));
+  document.getElementById("buyEliteBtn")?.addEventListener("click", () => buy("elite"));
 </script>
 
 </body>
